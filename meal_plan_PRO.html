@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Professional Meal Planner - GrowFit | Codeavour 7.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%); min-height: 100vh; padding: 20px; color: white; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .back-btn { background: rgba(0, 245, 255, 0.2); color: #00f5ff; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; margin-bottom: 20px; border: 1px solid #00f5ff; }
+        .back-btn:hover { background: rgba(0, 245, 255, 0.3); }
+        .header-card { background: linear-gradient(135deg, #00f5ff, #b794f6); padding: 30px; border-radius: 15px; margin-bottom: 25px; text-align: center; }
+        .header-card h1 { font-size: 32px; margin-bottom: 10px; }
+        .header-card p { opacity: 0.9; font-size: 16px; }
+        .card { background: #1a1f3a; padding: 30px; border-radius: 15px; margin-bottom: 25px; border: 1px solid rgba(0, 245, 255, 0.2); }
+        h2 { color: #00f5ff; margin-bottom: 20px; font-size: 22px; }
+        .prefs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0; }
+        .pref-box { background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; border-left: 3px solid #00f5ff; }
+        .pref-box label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #00f5ff; }
+        .pref-box select, .pref-box input { width: 100%; padding: 10px; background: #0a0e27; border: 1px solid rgba(0, 245, 255, 0.3); border-radius: 6px; font-size: 14px; color: white; }
+        .pref-box select:focus, .pref-box input:focus { outline: none; border-color: #00f5ff; }
+        .mode-toggle { display: flex; gap: 20px; margin: 20px 0; align-items: center; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; }
+        .mode-toggle label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #00f5ff; font-weight: 600; }
+        .mode-toggle input { width: auto; margin: 0; }
+        .manual-inputs { display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .manual-inputs.show { display: grid; }
+        .generate-btn { background: linear-gradient(135deg, #00f5ff, #b794f6); color: white; padding: 15px 40px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 16px; margin-top: 20px; width: 100%; }
+        .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 245, 255, 0.4); }
+        .week-tabs { display: flex; gap: 10px; margin: 20px 0; overflow-x: auto; }
+        .day-tab { background: rgba(0, 0, 0, 0.3); padding: 12px 20px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; color: #a0aec0; font-weight: 600; }
+        .day-tab.active { background: rgba(0, 245, 255, 0.2); color: #00f5ff; border-color: #00f5ff; }
+        .day-plan { display: none; }
+        .day-plan.active { display: block; }
+        .meal-card { background: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #00f5ff; }
+        .meal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .meal-time { font-size: 12px; font-weight: 600; color: #b794f6; text-transform: uppercase; }
+        .meal-name { font-size: 18px; font-weight: 700; color: white; margin: 5px 0; }
+        .meal-nutrition { display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap; }
+        .nutrition-badge { background: rgba(0, 245, 255, 0.1); padding: 6px 12px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(0, 245, 255, 0.2); }
+        .nutrition-badge strong { color: #00f5ff; }
+        .foods-list { background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 6px; margin-top: 10px; }
+        .food-item { padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 14px; color: #a0aec0; }
+        .food-item:last-child { border-bottom: none; }
+        .day-summary { background: linear-gradient(135deg, rgba(0, 245, 255, 0.2), rgba(183, 148, 246, 0.2)); padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(0, 245, 255, 0.3); }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
+        .summary-item { text-align: center; }
+        .summary-number { font-size: 28px; font-weight: bold; color: #00f5ff; }
+        .summary-label { font-size: 12px; color: #a0aec0; margin-top: 5px; }
+        .quality-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 8px; }
+        .quality-excellent { background: rgba(0, 255, 136, 0.2); color: #00ff88; border: 1px solid #00ff88; }
+        .quality-good { background: rgba(0, 245, 255, 0.2); color: #00f5ff; border: 1px solid #00f5ff; }
+        .loading { display: none; text-align: center; padding: 40px; }
+        .loading.active { display: block; }
+        .spinner { border: 4px solid rgba(0, 245, 255, 0.1); border-top: 4px solid #00f5ff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .pdf-btn { background: linear-gradient(135deg, #ff6b6b, #ee5a6f); color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .pdf-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 107, 109, 0.4); }
+        .accuracy-badge { background: rgba(0, 255, 136, 0.3); color: #00ff88; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+        <div class="header-card">
+            <h1>🏋️ Professional Meal Planner</h1>
+            <p>Science-based nutrition planning with <strong>macro-accurate adjustments (±5%)</strong> | Codeavour 7.0</p>
+        </div>
+        <div class="card">
+            <h2>⚙️ Your Nutrition Goals</h2>
+            
+            <!-- Mode Toggle -->
+            <div class="mode-toggle">
+                <label>
+                    <input type="radio" name="mode" value="auto" checked onchange="toggleMode()"> 🤖 Auto (based on your profile)
+                </label>
+                <label>
+                    <input type="radio" name="mode" value="manual" onchange="toggleMode()"> ✏️ Manual (enter your own targets)
+                </label>
+            </div>
+            
+            <!-- Auto Mode Fields (always visible) -->
+            <div id="autoFields">
+                <div class="prefs-grid">
+                    <div class="pref-box"><label>👤 Gender</label><select id="gender"><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+                    <div class="pref-box"><label>🎂 Age (years)</label><input type="number" id="age" value="25" min="15" max="80"></div>
+                    <div class="pref-box"><label>📏 Height (cm)</label><input type="number" id="height" value="170" min="140" max="220"></div>
+                    <div class="pref-box"><label>⚖️ Current Weight (kg)</label><input type="number" id="weight" value="70" min="40" max="150"></div>
+                    <div class="pref-box"><label>🎯 Primary Goal</label><select id="goal"><option value="gain">Weight Gain (Muscle Building)</option><option value="lose">Weight Loss (Fat Loss)</option><option value="maintain">Maintain Weight</option><option value="recomp">Body Recomposition</option></select></div>
+                    <div class="pref-box"><label>🥗 Diet Type</label><select id="diet"><option value="veg">Vegetarian</option><option value="nonveg">Non-Vegetarian</option><option value="vegan">Vegan</option><option value="eggetarian">Eggetarian</option></select></div>
+                    <div class="pref-box"><label>⚡ Activity Level</label><select id="activity"><option value="sedentary">Sedentary (Desk job)</option><option value="light">Light Active (1-2 days/week)</option><option value="moderate">Moderate (3-5 days/week)</option><option value="very">Very Active (6-7 days/week)</option><option value="athlete">Athlete (2x/day training)</option></select></div>
+                </div>
+            </div>
+            
+            <!-- Manual Inputs (hidden by default) -->
+            <div id="manualInputs" class="manual-inputs">
+                <div class="pref-box"><label>🔥 Daily Calories</label><input type="number" id="manualCalories" value="2000" min="1000" max="5000"></div>
+                <div class="pref-box"><label>🥩 Protein (g)</label><input type="number" id="manualProtein" value="150" min="50" max="300"></div>
+                <div class="pref-box"><label>🍞 Carbs (g)</label><input type="number" id="manualCarbs" value="250" min="50" max="500"></div>
+                <div class="pref-box"><label>🧈 Fats (g)</label><input type="number" id="manualFats" value="70" min="20" max="150"></div>
+            </div>
+            
+            <div class="pref-box" style="margin-top: 15px;"><label>🚫 Food Allergies / Avoid</label><input type="text" id="allergies" placeholder="e.g., Peanuts, Dairy, Gluten, Shellfish..." style="width: 100%; padding: 12px;"><p style="font-size: 12px; color: #a0aec0; margin-top: 8px;">These foods will be excluded from your plan</p></div>
+            
+            <button class="generate-btn" onclick="generateProMealPlan()">✨ Generate Professional Meal Plan</button>
+            
+            <div class="loading" id="loading"><div class="spinner"></div><p style="color: #00f5ff; font-weight: 600; font-size: 18px;">🔬 Calculating optimal nutrition...</p><p style="color: #a0aec0; margin-top: 10px;">Balancing macros • Adjusting portions for ±5% accuracy</p></div>
+            
+            <div id="results" style="display: none; margin-top: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="margin: 0;">Your Professional 7-Day Plan <span class="accuracy-badge" id="accuracyBadge">⚡ Macro‑adjusted</span></h2>
+                    <button onclick="exportMealPlanPDF()" class="pdf-btn">📄 Download PDF</button>
+                </div>
+                <div class="week-tabs" id="weekTabs"></div>
+                <div id="dayPlans"></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // QUALITY FOOD DATABASE
+        const PRO_FOODS = {
+            protein_veg: [
+                {name:'paneer',cal:265,pro:18,carb:1.2,fat:20,quality:'excellent'},
+                {name:'tofu',cal:76,pro:8,carb:1.9,fat:4.8,quality:'excellent'},
+                {name:'chickpeas',cal:164,pro:8.9,carb:27,fat:2.6,quality:'excellent'},
+                {name:'black beans',cal:132,pro:8.9,carb:24,fat:0.5,quality:'excellent'},
+                {name:'lentils (dal)',cal:116,pro:9,carb:20,fat:0.4,quality:'excellent'},
+                {name:'kidney beans',cal:127,pro:8.7,carb:23,fat:0.5,quality:'excellent'},
+                {name:'soy chunks',cal:345,pro:52,carb:33,fat:0.5,quality:'excellent'},
+                {name:'peanut butter',cal:588,pro:25,carb:20,fat:50,quality:'good'},
+                {name:'greek yogurt',cal:59,pro:10,carb:3.6,fat:0.4,quality:'excellent'}
+            ],
+            protein_nonveg: [
+                {name:'chicken breast',cal:165,pro:31,carb:0,fat:3.6,quality:'excellent'},
+                {name:'eggs',cal:155,pro:13,carb:1.1,fat:11,quality:'excellent'},
+                {name:'fish (salmon)',cal:206,pro:22,carb:0,fat:13,quality:'excellent'},
+                {name:'tuna',cal:132,pro:28,carb:0,fat:1.3,quality:'excellent'},
+                {name:'turkey breast',cal:135,pro:30,carb:0,fat:0.7,quality:'excellent'}
+            ],
+            carbs_quality: [
+                {name:'brown rice',cal:112,pro:2.6,carb:24,fat:0.9,quality:'excellent'},
+                {name:'quinoa',cal:120,pro:4.4,carb:21,fat:1.9,quality:'excellent'},
+                {name:'oats',cal:68,pro:2.4,carb:12,fat:1.4,quality:'excellent'},
+                {name:'sweet potato',cal:86,pro:1.6,carb:20,fat:0.1,quality:'excellent'},
+                {name:'whole wheat roti',cal:71,pro:3,carb:15,fat:0.4,quality:'excellent'}
+            ],
+            fruits: [
+                {name:'banana',cal:89,pro:1.1,carb:23,fat:0.3,quality:'excellent'},
+                {name:'apple',cal:52,pro:0.3,carb:14,fat:0.2,quality:'excellent'},
+                {name:'orange',cal:47,pro:0.9,carb:12,fat:0.1,quality:'excellent'},
+                {name:'mango',cal:60,pro:0.8,carb:15,fat:0.4,quality:'excellent'},
+                {name:'papaya',cal:43,pro:0.5,carb:11,fat:0.3,quality:'excellent'},
+                {name:'berries',cal:57,pro:0.7,carb:14,fat:0.3,quality:'excellent'}
+            ],
+            vegetables: [
+                {name:'broccoli',cal:34,pro:2.8,carb:7,fat:0.4,quality:'excellent'},
+                {name:'spinach',cal:23,pro:2.9,carb:3.6,fat:0.4,quality:'excellent'},
+                {name:'carrots',cal:41,pro:0.9,carb:10,fat:0.2,quality:'excellent'},
+                {name:'bell peppers',cal:31,pro:1,carb:6,fat:0.3,quality:'excellent'},
+                {name:'tomato',cal:18,pro:0.9,carb:3.9,fat:0.2,quality:'excellent'},
+                {name:'cauliflower',cal:25,pro:1.9,carb:5,fat:0.3,quality:'excellent'},
+                {name:'mixed vegetables',cal:65,pro:2.6,carb:13,fat:0.3,quality:'excellent'}
+            ],
+            healthy_fats: [
+                {name:'almonds',cal:579,pro:21,carb:22,fat:50,quality:'excellent'},
+                {name:'walnuts',cal:654,pro:15,carb:14,fat:65,quality:'excellent'},
+                {name:'chia seeds',cal:486,pro:17,carb:42,fat:31,quality:'excellent'},
+                {name:'flax seeds',cal:534,pro:18,carb:29,fat:42,quality:'excellent'},
+                {name:'pumpkin seeds',cal:559,pro:30,carb:11,fat:49,quality:'excellent'}
+            ]
+        };
+
+        // Toggle between Auto and Manual mode
+        function toggleMode() {
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            const manualDiv = document.getElementById('manualInputs');
+            if (mode === 'manual') {
+                manualDiv.classList.add('show');
+            } else {
+                manualDiv.classList.remove('show');
+            }
+        }
+
+        // Mifflin-St Jeor Calculator (auto mode)
+        function calculateTargetsAuto(weight, goal, activity, gender, age, height) {
+            const mult = { sedentary:1.2, light:1.375, moderate:1.55, very:1.725, athlete:1.9 };
+            let bmr = (gender==='male') ? (10*weight)+(6.25*height)-(5*age)+5 : (gender==='female') ? (10*weight)+(6.25*height)-(5*age)-161 : (10*weight)+(6.25*height)-(5*age)-78;
+            const tdee = bmr * mult[activity];
+            let calories, protein, carbs, fat;
+            if(goal==='gain') { calories = Math.round(tdee+400); protein = Math.round(weight*2.2); fat = Math.round(weight*1); carbs = Math.round((calories - (protein*4) - (fat*9))/4); }
+            else if(goal==='lose') { calories = Math.round(tdee-500); protein = Math.round(weight*2); fat = Math.round(weight*0.8); carbs = Math.round((calories - (protein*4) - (fat*9))/4); }
+            else if(goal==='recomp') { calories = Math.round(tdee); protein = Math.round(weight*2.2); fat = Math.round(weight*1); carbs = Math.round((calories - (protein*4) - (fat*9))/4); }
+            else { calories = Math.round(tdee); protein = Math.round(weight*1.8); fat = Math.round(weight*0.9); carbs = Math.round((calories - (protein*4) - (fat*9))/4); }
+            return { calories, protein, carbs, fat, bmr:Math.round(bmr), tdee:Math.round(tdee) };
+        }
+
+        // Get targets based on current mode
+        function getTargets() {
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            if (mode === 'manual') {
+                const calories = parseInt(document.getElementById('manualCalories').value);
+                const protein = parseInt(document.getElementById('manualProtein').value);
+                const carbs = parseInt(document.getElementById('manualCarbs').value);
+                const fat = parseInt(document.getElementById('manualFats').value);
+                return { calories, protein, carbs, fat, bmr:0, tdee:0, isManual: true };
+            } else {
+                const weight = parseInt(document.getElementById('weight').value);
+                const goal = document.getElementById('goal').value;
+                const activity = document.getElementById('activity').value;
+                const gender = document.getElementById('gender').value;
+                const age = parseInt(document.getElementById('age').value);
+                const height = parseInt(document.getElementById('height').value);
+                return { ...calculateTargetsAuto(weight, goal, activity, gender, age, height), isManual: false };
+            }
+        }
+
+        // Create initial meal plan (without adjustment)
+        function createProDayPlan(day, targets, diet, allergies, dayIndex) {
+            const meals = [];
+            const mealStructure = [
+                {time:'Breakfast', calPercent:0.25},
+                {time:'Mid-Morning Snack', calPercent:0.10},
+                {time:'Lunch', calPercent:0.30},
+                {time:'Evening Snack', calPercent:0.10},
+                {time:'Dinner', calPercent:0.25}
+            ];
+            mealStructure.forEach(mealSlot => {
+                meals.push(createProMealInitial(mealSlot, targets, diet, allergies, dayIndex));
+            });
+            return { day, meals, targets };
+        }
+
+        function createProMealInitial(mealSlot, targets, diet, allergies, dayIndex) {
+            const targetCal = Math.round(targets.calories * mealSlot.calPercent);
+            const targetPro = Math.round(targets.protein * mealSlot.calPercent);
+            const foods = [];
+            let totalCal=0, totalPro=0, totalCarb=0, totalFat=0;
+
+            // 1. Protein source
+            const proteinSources = (diet==='veg'||diet==='eggetarian') ? [...PRO_FOODS.protein_veg, ...(diet==='eggetarian'?[{name:'eggs',cal:155,pro:13,carb:1.1,fat:11,quality:'excellent'}]:[])] : [...PRO_FOODS.protein_veg, ...PRO_FOODS.protein_nonveg];
+            const proteinFood = proteinSources[dayIndex % proteinSources.length];
+            let proteinPortion = Math.round(targetPro / proteinFood.pro * 100);
+            if(proteinPortion < 30) proteinPortion = 60;
+            const proteinMult = proteinPortion/100;
+            foods.push({name:proteinFood.name, portion:proteinPortion, cal:Math.round(proteinFood.cal*proteinMult), pro:Math.round(proteinFood.pro*proteinMult*10)/10, carb:Math.round(proteinFood.carb*proteinMult*10)/10, fat:Math.round(proteinFood.fat*proteinMult*10)/10, origPortion:proteinPortion, type:'protein', foodObj:proteinFood});
+            totalCal += proteinFood.cal*proteinMult; totalPro += proteinFood.pro*proteinMult; totalCarb += proteinFood.carb*proteinMult; totalFat += proteinFood.fat*proteinMult;
+
+            // 2. Complex carb
+            const carbFood = PRO_FOODS.carbs_quality[dayIndex % PRO_FOODS.carbs_quality.length];
+            let carbPortion = 120;
+            const carbMult = carbPortion/100;
+            foods.push({name:carbFood.name, portion:carbPortion, cal:Math.round(carbFood.cal*carbMult), pro:Math.round(carbFood.pro*carbMult*10)/10, carb:Math.round(carbFood.carb*carbMult*10)/10, fat:Math.round(carbFood.fat*carbMult*10)/10, origPortion:carbPortion, type:'carb', foodObj:carbFood});
+            totalCal += carbFood.cal*carbMult; totalPro += carbFood.pro*carbMult; totalCarb += carbFood.carb*carbMult; totalFat += carbFood.fat*carbMult;
+
+            // 3. Fruit (for breakfast/snacks)
+            if(mealSlot.time.includes('Breakfast') || mealSlot.time.includes('Snack')) {
+                const fruit = PRO_FOODS.fruits[dayIndex % PRO_FOODS.fruits.length];
+                let fruitPortion = 100;
+                const fruitMult = fruitPortion/100;
+                foods.push({name:fruit.name, portion:fruitPortion, cal:Math.round(fruit.cal*fruitMult), pro:Math.round(fruit.pro*fruitMult*10)/10, carb:Math.round(fruit.carb*fruitMult*10)/10, fat:Math.round(fruit.fat*fruitMult*10)/10, origPortion:fruitPortion, type:'fruit', foodObj:fruit});
+                totalCal += fruit.cal*fruitMult; totalPro += fruit.pro*fruitMult; totalCarb += fruit.carb*fruitMult; totalFat += fruit.fat*fruitMult;
+            }
+
+            // 4. Vegetables (lunch/dinner)
+            if(mealSlot.time.includes('Lunch') || mealSlot.time.includes('Dinner')) {
+                const veg = PRO_FOODS.vegetables[(dayIndex+1) % PRO_FOODS.vegetables.length];
+                let vegPortion = 150;
+                const vegMult = vegPortion/100;
+                foods.push({name:veg.name, portion:vegPortion, cal:Math.round(veg.cal*vegMult), pro:Math.round(veg.pro*vegMult*10)/10, carb:Math.round(veg.carb*vegMult*10)/10, fat:Math.round(veg.fat*vegMult*10)/10, origPortion:vegPortion, type:'veg', foodObj:veg});
+                totalCal += veg.cal*vegMult; totalPro += veg.pro*vegMult; totalCarb += veg.carb*vegMult; totalFat += veg.fat*vegMult;
+            }
+
+            // 5. Healthy fats (snacks only)
+            if(mealSlot.time.includes('Snack')) {
+                const nuts = PRO_FOODS.healthy_fats[dayIndex % PRO_FOODS.healthy_fats.length];
+                let nutsPortion = 20;
+                const nutsMult = nutsPortion/100;
+                foods.push({name:nuts.name, portion:nutsPortion, cal:Math.round(nuts.cal*nutsMult), pro:Math.round(nuts.pro*nutsMult*10)/10, carb:Math.round(nuts.carb*nutsMult*10)/10, fat:Math.round(nuts.fat*nutsMult*10)/10, origPortion:nutsPortion, type:'nuts', foodObj:nuts});
+                totalCal += nuts.cal*nutsMult; totalPro += nuts.pro*nutsMult; totalCarb += nuts.carb*nutsMult; totalFat += nuts.fat*nutsMult;
+            }
+
+            return { time:mealSlot.time, foods, targetCal, targetPro, total:{cal:Math.round(totalCal), pro:Math.round(totalPro*10)/10, carb:Math.round(totalCarb*10)/10, fat:Math.round(totalFat*10)/10} };
+        }
+
+        // Adjust meal portions to hit targets (±5%)
+        function adjustMeal(meal, targetCal, targetPro) {
+            let iterations = 0;
+            const maxIter = 8;
+            let currentCal = meal.total.cal;
+            let currentPro = meal.total.pro;
+            let calRatio = currentCal / targetCal;
+            let proRatio = currentPro / targetPro;
+
+            while((calRatio < 0.95 || calRatio > 1.05 || proRatio < 0.95 || proRatio > 1.05) && iterations < maxIter) {
+                for(let food of meal.foods) {
+                    let oldPortion = food.portion;
+                    let newPortion = oldPortion;
+                    if(calRatio !== 1) {
+                        if(food.type !== 'veg' && food.type !== 'fruit') {
+                            let factor = 1 / calRatio;
+                            factor = Math.min(2.0, Math.max(0.5, factor));
+                            newPortion = Math.round(oldPortion * factor);
+                        }
+                    }
+                    if(proRatio !== 1 && (food.type === 'protein')) {
+                        let factor = 1 / proRatio;
+                        factor = Math.min(2.0, Math.max(0.5, factor));
+                        newPortion = Math.round(oldPortion * factor);
+                    }
+                    if(food.type === 'protein') newPortion = Math.min(350, Math.max(50, newPortion));
+                    if(food.type === 'carb') newPortion = Math.min(300, Math.max(80, newPortion));
+                    if(food.type === 'veg') newPortion = Math.min(300, Math.max(100, newPortion));
+                    if(food.type === 'fruit') newPortion = Math.min(250, Math.max(80, newPortion));
+                    if(food.type === 'nuts') newPortion = Math.min(40, Math.max(10, newPortion));
+                    
+                    food.portion = newPortion;
+                    const mult = newPortion/100;
+                    food.cal = Math.round(food.foodObj.cal * mult);
+                    food.pro = Math.round(food.foodObj.pro * mult * 10)/10;
+                    food.carb = Math.round(food.foodObj.carb * mult * 10)/10;
+                    food.fat = Math.round(food.foodObj.fat * mult * 10)/10;
+                }
+                let newCal=0, newPro=0, newCarb=0, newFat=0;
+                for(let f of meal.foods) {
+                    newCal += f.cal;
+                    newPro += f.pro;
+                    newCarb += f.carb;
+                    newFat += f.fat;
+                }
+                meal.total = { cal:Math.round(newCal), pro:Math.round(newPro*10)/10, carb:Math.round(newCarb*10)/10, fat:Math.round(newFat*10)/10 };
+                currentCal = meal.total.cal;
+                currentPro = meal.total.pro;
+                calRatio = currentCal / targetCal;
+                proRatio = currentPro / targetPro;
+                iterations++;
+            }
+            return meal;
+        }
+
+        // Main generator
+        function generateProMealPlan() {
+            const diet = document.getElementById('diet').value;
+            const allergies = document.getElementById('allergies').value.toLowerCase().split(',').map(s=>s.trim());
+            const targets = getTargets();
+            
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('results').style.display = 'none';
+
+            setTimeout(() => {
+                const weekPlan = [];
+                const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+                
+                days.forEach((day, idx) => {
+                    let dayPlan = createProDayPlan(day, targets, diet, allergies, idx);
+                    for(let meal of dayPlan.meals) {
+                        let targetCal = Math.round(targets.calories * (meal.targetCal / targets.calories));
+                        let targetPro = Math.round(targets.protein * (meal.targetPro / targets.protein));
+                        adjustMeal(meal, targetCal, targetPro);
+                    }
+                    let dayTotalCal=0, dayTotalPro=0, dayTotalCarb=0, dayTotalFat=0;
+                    for(let meal of dayPlan.meals) {
+                        dayTotalCal += meal.total.cal;
+                        dayTotalPro += meal.total.pro;
+                        dayTotalCarb += meal.total.carb;
+                        dayTotalFat += meal.total.fat;
+                    }
+                    dayPlan.dayTotals = { cal:dayTotalCal, pro:dayTotalPro, carb:dayTotalCarb, fat:dayTotalFat };
+                    weekPlan.push(dayPlan);
+                });
+                
+                window.mealPlanData = weekPlan;
+                window.nutritionTargets = targets;
+                displayProWeekPlan(weekPlan, targets);
+                
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('results').style.display = 'block';
+            }, 2500);
+        }
+
+        function displayProWeekPlan(weekPlan, targets) {
+            const tabsContainer = document.getElementById('weekTabs');
+            const plansContainer = document.getElementById('dayPlans');
+            tabsContainer.innerHTML = '';
+            plansContainer.innerHTML = '';
+            
+            weekPlan.forEach((dayPlan, index) => {
+                const tab = document.createElement('div');
+                tab.className = 'day-tab' + (index===0 ? ' active' : '');
+                tab.textContent = dayPlan.day;
+                tab.onclick = () => switchDay(index);
+                tabsContainer.appendChild(tab);
+                
+                const planDiv = document.createElement('div');
+                planDiv.className = 'day-plan' + (index===0 ? ' active' : '');
+                
+                const calAcc = Math.round((dayPlan.dayTotals.cal / targets.calories) * 100);
+                const proAcc = Math.round((dayPlan.dayTotals.pro / targets.protein) * 100);
+                const calDiff = Math.abs(dayPlan.dayTotals.cal - targets.calories);
+                const proDiff = Math.abs(dayPlan.dayTotals.pro - targets.protein);
+                const calStatus = (calDiff / targets.calories) <= 0.05 ? '✅ Within 5%' : '⚠️ Slightly off';
+                const proStatus = (proDiff / targets.protein) <= 0.05 ? '✅ Within 5%' : '⚠️ Slightly off';
+                
+                const summary = document.createElement('div');
+                summary.className = 'day-summary';
+                summary.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+                        <div><h3 style="margin:0; font-size:20px;">${dayPlan.day} Summary</h3>${!targets.isManual ? `<p style="margin:5px 0 0; font-size:12px; opacity:0.8;">BMR: ${targets.bmr} cal | TDEE: ${targets.tdee} cal</p>` : '<p style="margin:5px 0 0; font-size:12px; opacity:0.8;">Manual mode – using your custom targets</p>'}</div>
+                        <div><span class="quality-badge quality-excellent">✅ Macro‑adjusted</span><span class="quality-badge quality-good">🎯 Calories: ${calAcc}% (${calStatus})</span><span class="quality-badge quality-good">🥩 Protein: ${proAcc}% (${proStatus})</span></div>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-item"><div class="summary-number">${Math.round(dayPlan.dayTotals.cal)}</div><div class="summary-label">Calories (Target: ${targets.calories})</div></div>
+                        <div class="summary-item"><div class="summary-number">${Math.round(dayPlan.dayTotals.pro)}g</div><div class="summary-label">Protein (Target: ${targets.protein}g)</div></div>
+                        <div class="summary-item"><div class="summary-number">${Math.round(dayPlan.dayTotals.carb)}g</div><div class="summary-label">Carbs (Target: ${targets.carbs}g)</div></div>
+                        <div class="summary-item"><div class="summary-number">${Math.round(dayPlan.dayTotals.fat)}g</div><div class="summary-label">Fats (Target: ${targets.fat}g)</div></div>
+                    </div>
+                `;
+                planDiv.appendChild(summary);
+                
+                dayPlan.meals.forEach(meal => {
+                    const mealCard = document.createElement('div');
+                    mealCard.className = 'meal-card';
+                    const foodsList = meal.foods.map(f => `<div class="food-item">• ${f.name} (${f.portion}g) - ${f.cal} cal | P: ${f.pro}g | C: ${f.carb}g | F: ${f.fat}g</div>`).join('');
+                    mealCard.innerHTML = `
+                        <div class="meal-header"><div><div class="meal-time">${meal.time}</div><div class="meal-name">${meal.foods.length} Quality Foods</div></div></div>
+                        <div class="meal-nutrition"><div class="nutrition-badge"><strong>${meal.total.cal}</strong> Calories</div><div class="nutrition-badge"><strong>${meal.total.pro}g</strong> Protein</div><div class="nutrition-badge"><strong>${meal.total.carb}g</strong> Carbs</div><div class="nutrition-badge"><strong>${meal.total.fat}g</strong> Fat</div></div>
+                        <div class="foods-list">${foodsList}</div>
+                    `;
+                    planDiv.appendChild(mealCard);
+                });
+                plansContainer.appendChild(planDiv);
+            });
+        }
+        
+        function switchDay(index) {
+            document.querySelectorAll('.day-tab').forEach((tab,i)=>tab.classList.toggle('active',i===index));
+            document.querySelectorAll('.day-plan').forEach((plan,i)=>plan.classList.toggle('active',i===index));
+        }
+        
+        function exportMealPlanPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let y = 20;
+            doc.setFontSize(20);
+            doc.setTextColor(0,245,255);
+            doc.text('GrowFit Professional Meal Plan',105,y,{align:'center'});
+            y+=10;
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text('Science-Based Nutrition with Macro-Adjusted Accuracy (±5%)',105,y,{align:'center'});
+            y+=15;
+            const targets = window.nutritionTargets;
+            doc.setFontSize(12);
+            doc.setTextColor(0);
+            doc.text(`Daily Targets: ${targets.calories} cal | Protein: ${targets.protein}g | Carbs: ${targets.carbs}g | Fat: ${targets.fat}g`,20,y);
+            y+=8;
+            doc.setLineWidth(0.5);
+            doc.line(20,y,190,y);
+            y+=10;
+            if(window.mealPlanData) {
+                window.mealPlanData.forEach((dayData,dayIdx)=>{
+                    if(y>250){ doc.addPage(); y=20; }
+                    doc.setFontSize(16);
+                    doc.setTextColor(0,100,200);
+                    doc.text(`${dayData.day}`,20,y);
+                    y+=8;
+                    let dayTotal=dayData.dayTotals;
+                    doc.setFontSize(10);
+                    doc.setTextColor(100);
+                    doc.text(`Daily: ${Math.round(dayTotal.cal)} cal | P: ${Math.round(dayTotal.pro)}g | C: ${Math.round(dayTotal.carb)}g | F: ${Math.round(dayTotal.fat)}g`,20,y);
+                    y+=10;
+                    dayData.meals.forEach(meal=>{
+                        if(y>265){ doc.addPage(); y=20; }
+                        doc.setFontSize(12);
+                        doc.setTextColor(0);
+                        doc.text(`${meal.time}`,25,y);
+                        y+=6;
+                        doc.setFontSize(9);
+                        doc.setTextColor(80);
+                        doc.text(`Total: ${meal.total.cal} cal | P: ${meal.total.pro}g | C: ${meal.total.carb}g | F: ${meal.total.fat}g`,30,y);
+                        y+=5;
+                        meal.foods.forEach(food=>{
+                            if(y>275){ doc.addPage(); y=20; }
+                            doc.setFontSize(8);
+                            doc.setTextColor(100);
+                            doc.text(`• ${food.name} (${food.portion}g): ${food.cal} cal`,35,y);
+                            y+=4;
+                        });
+                        y+=3;
+                    });
+                    y+=5;
+                });
+            }
+            const pageCount = doc.internal.getNumberOfPages();
+            for(let i=1;i<=pageCount;i++){
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`GrowFit Professional Plan - Page ${i} of ${pageCount}`,105,285,{align:'center'});
+            }
+            doc.save('GrowFit_Professional_MealPlan.pdf');
+            alert('✅ Professional meal plan downloaded!');
+        }
+    </script>
+</body>
+</html>

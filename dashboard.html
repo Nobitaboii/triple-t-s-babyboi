@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>GrowFit Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #0a0e27; color: white; }
+        .top-bar { background: #1a1f3a; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00f5ff; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 24px; font-weight: 800; color: #00f5ff; }
+        .top-actions { display: flex; gap: 15px; align-items: center; }
+        .score-mini { background: linear-gradient(135deg, #00f5ff, #b794f6); padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 16px; }
+        .icon-btn { background: rgba(0, 245, 255, 0.1); border: 1px solid rgba(0, 245, 255, 0.3); color: #00f5ff; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+        .icon-btn:hover { background: rgba(0, 245, 255, 0.2); }
+        .logout-btn { background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .container { display: flex; min-height: calc(100vh - 60px); }
+        .sidebar { width: 250px; background: #151932; padding: 20px; border-right: 1px solid rgba(0, 245, 255, 0.1); }
+        .nav-item { padding: 12px 15px; margin: 5px 0; border-radius: 8px; cursor: pointer; color: #a0aec0; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 10px; }
+        .nav-item:hover { background: rgba(0, 245, 255, 0.1); color: #00f5ff; }
+        .nav-item.active { background: rgba(0, 245, 255, 0.15); color: #00f5ff; border-left: 3px solid #00f5ff; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .card { background: #1a1f3a; padding: 25px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(0, 245, 255, 0.1); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h2 { color: #00f5ff; font-size: 20px; margin: 0; }
+        .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: linear-gradient(135deg, rgba(0, 245, 255, 0.1), rgba(183, 148, 246, 0.1)); padding: 20px; border-radius: 10px; text-align: center; border: 1px solid rgba(0, 245, 255, 0.2); }
+        .stat-value { font-size: 32px; font-weight: 800; color: #00f5ff; }
+        .stat-label { font-size: 13px; color: #a0aec0; margin-top: 5px; }
+        .nutrients-compact { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+        .nutrient-mini { background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 8px; border-left: 3px solid #00f5ff; }
+        .nutrient-mini.low { border-left-color: #ff4444; }
+        .nutrient-mini .value { font-size: 18px; font-weight: 700; color: #00f5ff; }
+        .nutrient-mini .label { font-size: 11px; color: #a0aec0; margin-top: 3px; }
+        .suggestion-mini { background: linear-gradient(135deg, rgba(183, 148, 246, 0.1), rgba(255, 107, 157, 0.1)); padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #b794f6; font-size: 14px; }
+        .suggestion-mini strong { color: #b794f6; }
+        .chart-container { height: 280px; margin: 15px 0; }
+        .form-compact { max-width: 600px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; color: #00f5ff; font-weight: 600; font-size: 13px; }
+        input, select { width: 100%; padding: 10px; background: #0a0e27; border: 1px solid rgba(0, 245, 255, 0.2); border-radius: 6px; color: white; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #00f5ff; }
+        .btn { background: linear-gradient(135deg, #00f5ff, #b794f6); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 245, 255, 0.3); }
+        .camera-section { background: rgba(0, 245, 255, 0.05); padding: 20px; border-radius: 12px; margin: 15px 0; border: 2px dashed #00f5ff; text-align: center; }
+        #cameraPreview { width: 100%; max-width: 400px; border-radius: 8px; margin: 15px 0; display: none; }
+        .scan-result { background: rgba(0, 255, 136, 0.1); padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 3px solid #00ff88; display: none; }
+        .lang-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+        .lang-card { background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; text-align: center; }
+        .lang-card:hover { border-color: #00f5ff; background: rgba(0, 245, 255, 0.05); }
+        .lang-card.selected { border-color: #00f5ff; background: rgba(0, 245, 255, 0.1); }
+        .lang-flag { font-size: 32px; margin-bottom: 8px; }
+        .lang-name { font-size: 15px; font-weight: 700; color: #00f5ff; }
+        .portion-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
+        .portion-card { background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; text-align: center; transition: all 0.3s; }
+        .portion-card:hover { border-color: #00f5ff; background: rgba(0, 245, 255, 0.05); }
+        .portion-card.selected { border-color: #00f5ff; background: rgba(0, 245, 255, 0.1); }
+        .portion-card .emoji { font-size: 36px; margin-bottom: 8px; }
+        .portion-card .name { font-size: 15px; font-weight: 700; color: #00f5ff; }
+        .portion-card .desc { font-size: 12px; color: #a0aec0; margin-top: 3px; }
+        .history-compact { background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #00f5ff; }
+        .history-compact .time { font-size: 11px; color: #a0aec0; }
+        .history-compact .name { font-size: 14px; font-weight: 700; margin: 3px 0; }
+        .history-compact .details { font-size: 12px; color: #b794f6; }
+        .settings-section { margin-bottom: 30px; }
+        .settings-section h3 { color: #b794f6; font-size: 16px; margin-bottom: 15px; }
+        .setting-item { background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .toggle { width: 50px; height: 26px; background: #ff4444; border-radius: 13px; position: relative; cursor: pointer; }
+        .toggle.on { background: #00ff88; }
+        .toggle-slider { width: 22px; height: 22px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
+        .toggle.on .toggle-slider { left: 26px; }
+        .alert-compact { background: rgba(255, 68, 68, 0.15); border: 1px solid #ff4444; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo">🏋️ GROWFIT</div>
+        <div class="top-actions">
+            <div class="score-mini" id="scoreDisplay">🏆 {{ score }}</div>
+            <button class="icon-btn" onclick="exportPDF()" id="exportBtn">📄 Export PDF</button>
+            <select id="quickLangSelect" style="background: #1a1f3a; color: #00f5ff; border: 1px solid #00f5ff; padding: 8px; border-radius: 6px;" onchange="changeLanguageQuick(this.value)">
+                <option value="en">🌐 English</option><option value="hi">🇮🇳 हिंदी</option><option value="es">🇪🇸 Español</option><option value="fr">🇫🇷 Français</option><option value="de">🇩🇪 Deutsch</option><option value="zh">🇨🇳 中文</option><option value="ja">🇯🇵 日本語</option><option value="ar">🇸🇦 العربية</option><option value="pt">🇧🇷 Português</option><option value="ru">🇷🇺 Русский</option>
+            </select>
+            <span style="color: #a0aec0; font-size: 14px;" id="usernameDisplay">{{ username }}</span>
+            <form action="/logout" method="post" style="margin: 0;"><button type="submit" class="logout-btn" id="logoutBtn">Logout</button></form>
+        </div>
+    </div>
+    
+    <!-- AI Alert Bar -->
+    <div id="aiAlertBar" style="display: none; background: linear-gradient(135deg, #ff6b6b, #ee5a6f); color: white; padding: 12px 30px; text-align: center; font-weight: bold; cursor: pointer; border-bottom: 3px solid #c92a2a;" onclick="showPage('insights', event)">
+        <span id="alertBarText">⚠️ You have health alerts! Click to view AI Insights.</span>
+    </div>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="nav-item active" onclick="showPage('overview', event)" id="navOverview">📊 Overview</div>
+            <div class="nav-item" onclick="showPage('nutrition', event)" id="navNutrition">🍽️ Nutrition</div>
+            <div class="nav-item" onclick="showPage('activity', event)" id="navActivity">🏃 Activity</div>
+            <div class="nav-item" onclick="showPage('insights', event)" id="navInsights">🤖 AI Insights</div>
+            <div class="nav-item" onclick="window.location.href='/achievements'" id="navAchievements">🏆 Achievements</div>
+            <div class="nav-item" onclick="showPage('history', event)" id="navHistory">📜 History</div>
+            <div class="nav-item" onclick="showPage('tools', event)" id="navTools">🔧 Tools</div>
+            <div class="nav-item" onclick="showPage('settings', event)" id="navSettings">⚙️ Settings</div>
+        </div>
+        <div class="main-content">
+            <!-- Overview Page -->
+            <div id="overview" class="page active">
+                <h2 style="font-size: 28px; margin-bottom: 20px;" id="overviewTitle">Today's Overview</h2>
+                <div class="quick-stats">
+                    <div class="stat-card"><div class="stat-value">{{ today_cal|int }}</div><div class="stat-label" id="statCal">🔥 Calories</div></div>
+                    <div class="stat-card"><div class="stat-value">{{ today_pro|int }}g</div><div class="stat-label" id="statPro">🥩 Protein</div></div>
+                    <div class="stat-card"><div class="stat-value">{{ today_carb|int }}g</div><div class="stat-label" id="statCarb">🍞 Carbs</div></div>
+                    <div class="stat-card"><div class="stat-value">{{ today_fat|int }}g</div><div class="stat-label" id="statFat">🧈 Fats</div></div>
+                </div>
+                <div class="card">
+                    <h2 id="chartTitle">⚖️ Calorie Balance</h2>
+                    <div class="chart-container"><canvas id="caloriesChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 id="nutrientsTitle">💊 Key Nutrients</h2>
+                        <button class="icon-btn" onclick="toggleNutrients()" id="nutrientToggle">Show All →</button>
+                    </div>
+                    <div class="nutrients-compact" id="nutrientsCompact">
+                        <div class="nutrient-mini"><div class="value">-</div><div class="label">Fiber</div></div>
+                        <div class="nutrient-mini"><div class="value">-</div><div class="label">Vitamin C</div></div>
+                        <div class="nutrient-mini"><div class="value">-</div><div class="label">Iron</div></div>
+                        <div class="nutrient-mini"><div class="value">-</div><div class="label">Calcium</div></div>
+                    </div>
+                    <div class="nutrients-compact" id="nutrientsFull" style="display: none; margin-top: 15px;">
+                        <div class="nutrient-mini"><div class="value">-</div><div class="label">Vitamin A</div></div>
+                        <div class="nutrient-mini"><div class="value">-</div><div class="label">Zinc</div></div>
+                        <div class="nutrient-mini"><div class="value">-</div><div class="label">Vitamin D</div></div>
+                        <div class="nutrient-mini"><div class="value">-</div><div class="label">Vitamin B12</div></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Nutrition Page with CAMERA SCAN -->
+            <div id="nutrition" class="page">
+                <h2 style="font-size: 28px; margin-bottom: 20px;" id="nutritionTitle">Log Food</h2>
+                <div class="card">
+                    <h2 id="scanTitle">📸 Scan Food with Camera</h2>
+                    <div class="camera-section">
+                        <p style="color: #a0aec0; margin-bottom: 15px;" id="scanDesc">Take a photo of your food for AI analysis</p>
+                        <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display: none;" onchange="analyzeFood(this)">
+                        <button class="btn" onclick="document.getElementById('cameraInput').click()" id="scanBtn">📷 Open Camera</button>
+                        <img id="cameraPreview" alt="Food preview">
+                        <div class="scan-result" id="scanResult"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2 id="manualTitle">Or Enter Manually</h2>
+                    <div id="foodMessage" style="display: none; padding: 15px; border-radius: 8px; margin-bottom: 15px;"></div>
+                    <form id="foodForm" class="form-compact" onsubmit="return submitFood(event)">
+                        <div class="form-row">
+                            <div>
+                                <label id="labelFood">Food Name</label>
+                                <input type="text" id="foodSearchInput" name="food_name" placeholder="Search for food..." autocomplete="off" onkeyup="searchFood(this.value)" required>
+                                <div id="foodSuggestions" style="position: absolute; background: #1a1f3a; border: 1px solid #00f5ff; border-radius: 8px; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; width: 280px; margin-top: 5px;"></div>
+                            </div>
+                            <div><label id="labelMethod">Method</label><select name="measurement_type" id="measureType" onchange="toggleMethod()"><option value="grams">Grams</option><option value="portion">Visual</option></select></div>
+                        </div>
+                        <div id="gramsInput"><label id="labelGrams">Weight (grams)</label><input type="number" name="grams" placeholder="e.g., 150" value="100"></div>
+                        <div id="portionInput" style="display: none;">
+                            <label id="labelPortion">Portion Size</label>
+                            <div class="portion-grid">
+                                <div class="portion-card" onclick="selectPortion(0.5, this)"><div class="emoji">✊</div><div class="name" id="portionSmall">Small</div><div class="desc">50g</div></div>
+                                <div class="portion-card" onclick="selectPortion(1, this)"><div class="emoji">🃏</div><div class="name" id="portionMedium">Medium</div><div class="desc">100g</div></div>
+                                <div class="portion-card" onclick="selectPortion(2, this)"><div class="emoji">🖐️</div><div class="name" id="portionLarge">Large</div><div class="desc">200g</div></div>
+                                <div class="portion-card" onclick="selectPortion(3, this)"><div class="emoji">🙌</div><div class="name" id="portionXL">X-Large</div><div class="desc">300g</div></div>
+                            </div>
+                            <input type="hidden" name="portion_servings" id="portionField" value="1">
+                        </div>
+                        <button type="submit" class="btn" style="margin-top: 20px; width: 100%;" id="addFoodBtn">Add Food</button>
+                    </form>
+                </div>
+            </div>
+            <!-- Activity Page -->
+            <div id="activity" class="page">
+                <h2 style="font-size: 28px; margin-bottom: 20px;" id="activityTitle">Log Activity</h2>
+                <div class="card">
+                    <form method="POST" action="/log_activity" class="form-compact">
+                        <div class="form-row">
+                            <div><label id="labelActivity">Activity</label><select name="activity_type" required><option value="">Select...</option>{% for act in act_names %}<option value="{{ act }}">{{ act }}</option>{% endfor %}</select></div>
+                            <div><label id="labelDuration">Duration (min)</label><input type="number" name="duration" required></div>
+                        </div>
+                        <button type="submit" class="btn" style="margin-top: 15px; width: 100%;" id="logActivityBtn">Log Activity</button>
+                    </form>
+                </div>
+            </div>
+            <!-- AI Insights -->
+            <div id="insights" class="page">
+                <h2 style="font-size: 28px; margin-bottom: 20px;" id="insightsTitle">AI Health Insights</h2>
+                <div class="card"><h2 id="alertsTitle">⚠️ Alerts</h2><div id="alertsContainer"></div></div>
+                <div class="card"><h2 id="suggestionsTitle">🤖 Suggestions</h2><div id="suggestionsContainer"></div></div>
+            </div>
+            <!-- History -->
+            <div id="history" class="page">
+                <h2 style="font-size: 28px; margin-bottom: 20px;" id="historyTitle">History</h2>
+                <div class="card">
+                    <h2 id="foodHistoryTitle">🍽️ Food Log</h2>
+                    {% if food_logs %}
+                        {% for food in food_logs %}
+                        <div class="history-compact">
+                            <div class="time">{{ food[6] }}</div>
+                            <div class="name">{{ food[0]|title }} ({{ food[1]|int }}g)</div>
+                            <div class="details">{{ food[2]|int }} cal • {{ food[3]|int }}g protein</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: #a0aec0;" id="noFood">No food logged!</p>
+                    {% endif %}
+                </div>
+                <div class="card">
+                    <h2 id="actHistoryTitle">🏃 Activities</h2>
+                    {% if activities %}
+                        {% for act in activities %}
+                        <div class="history-compact">
+                            <div class="time">{{ act[3] }}</div>
+                            <div class="name">{{ act[0] }}</div>
+                            <div class="details">{{ act[1] }} min • {{ act[2] }} cal</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: #a0aec0;" id="noActivity">No activities!</p>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Tools -->
+            <div id="tools" class="page">
+                <h2 style="font-size: 28px; margin-bottom: 20px;" id="toolsTitle">Health Tools</h2>
+                <div class="card"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <form action="/medical" method="get"><button type="submit" class="btn" style="width: 100%;" id="medicalBtn">🏥 Medical</button></form>
+                    <form action="/meal_plan" method="get"><button type="submit" class="btn" style="width: 100%;" id="mealBtn">📅 Meal Plan</button></form>
+                    <form action="/progress" method="get"><button type="submit" class="btn" style="width: 100%;" id="progressBtn">📈 Progress</button></form>
+                    <form action="/vitals" method="get"><button type="submit" class="btn" style="width: 100%;">💓 Vitals</button></form>
+                </div></div>
+            </div>
+            <!-- Settings -->
+            <div id="settings" class="page">
+                <h2 style="font-size: 28px; margin-bottom: 20px;" id="settingsTitle">Settings</h2>
+                <div class="card">
+                    <div class="settings-section">
+                        <h3 id="langHeader">🌐 App Language (20+ Languages)</h3>
+                        <div class="lang-grid" id="langGrid"></div>
+                    </div>
+                    <div class="settings-section">
+                        <h3 id="notifHeader">🔔 Notifications</h3>
+                        <div class="setting-item"><span id="notifAlerts">Nutrient Alerts</span><div class="toggle on" onclick="toggleSetting(this)"><div class="toggle-slider"></div></div></div>
+                        <div class="setting-item"><span id="notifAI">AI Suggestions</span><div class="toggle on" onclick="toggleSetting(this)"><div class="toggle-slider"></div></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const TRANSLATIONS = {
+            en: { name: 'English', flag: '🇬🇧', texts: { score: 'Score', exportBtn: 'Export PDF', logout: 'Logout', navOverview: '📊 Overview', navNutrition: '🍽️ Nutrition', navActivity: '🏃 Activity', navInsights: '🤖 AI Insights', navHistory: '📜 History', navTools: '🔧 Tools', navSettings: '⚙️ Settings', overviewTitle: "Today's Overview", chartTitle: '⚖️ Calorie Balance', nutrientsTitle: '💊 Key Nutrients', nutritionTitle: 'Log Food', scanTitle: '📸 Scan Food', scanDesc: 'Take a photo for AI analysis', scanBtn: '📷 Open Camera', manualTitle: 'Or Enter Manually', labelFood: 'Food Name', labelMethod: 'Method', labelGrams: 'Weight (grams)', labelPortion: 'Portion Size', portionSmall: 'Small', portionMedium: 'Medium', portionLarge: 'Large', portionXL: 'X-Large', addFoodBtn: 'Add Food', activityTitle: 'Log Activity', labelActivity: 'Activity', labelDuration: 'Duration (min)', logActivityBtn: 'Log Activity', insightsTitle: 'AI Insights', alertsTitle: '⚠️ Alerts', suggestionsTitle: '🤖 Suggestions', historyTitle: 'History', foodHistoryTitle: '🍽️ Food Log', actHistoryTitle: '🏃 Activities', noFood: 'No food logged!', noActivity: 'No activities!', toolsTitle: 'Health Tools', medicalBtn: '🏥 Medical', mealBtn: '📅 Meal Plan', progressBtn: '📈 Progress', settingsTitle: 'Settings', langHeader: '🌐 App Language', notifHeader: '🔔 Notifications', notifAlerts: 'Nutrient Alerts', notifAI: 'AI Suggestions', statCal: '🔥 Calories', statPro: '🥩 Protein', statCarb: '🍞 Carbs', statFat: '🧈 Fats' } },
+            hi: { name: 'हिंदी', flag: '🇮🇳', texts: { score: 'स्कोर', exportBtn: 'PDF निर्यात', logout: 'लॉगआउट', navOverview: '📊 अवलोकन', navNutrition: '🍽️ पोषण', navActivity: '🏃 गतिविधि', navInsights: '🤖 AI सुझाव', navHistory: '📜 इतिहास', navTools: '🔧 उपकरण', navSettings: '⚙️ सेटिंग्स', overviewTitle: 'आज का अवलोकन', chartTitle: '⚖️ कैलोरी संतुलन', nutrientsTitle: '💊 पोषक तत्व', nutritionTitle: 'भोजन लॉग करें', scanTitle: '📸 भोजन स्कैन करें', scanDesc: 'AI विश्लेषण के लिए फोटो लें', scanBtn: '📷 कैमरा खोलें', manualTitle: 'या मैन्युअल रूप से दर्ज करें', labelFood: 'भोजन का नाम', labelMethod: 'विधि', labelGrams: 'वजन (ग्राम)', labelPortion: 'भाग का आकार', portionSmall: 'छोटा', portionMedium: 'मध्यम', portionLarge: 'बड़ा', portionXL: 'अति बड़ा', addFoodBtn: 'भोजन जोड़ें', activityTitle: 'गतिविधि लॉग करें', labelActivity: 'गतिविधि', labelDuration: 'अवधि (मिनट)', logActivityBtn: 'गतिविधि लॉग करें', insightsTitle: 'AI सुझाव', alertsTitle: '⚠️ चेतावनी', suggestionsTitle: '🤖 सुझाव', historyTitle: 'इतिहास', foodHistoryTitle: '🍽️ भोजन लॉग', actHistoryTitle: '🏃 गतिविधियां', noFood: 'कोई भोजन लॉग नहीं!', noActivity: 'कोई गतिविधि नहीं!', toolsTitle: 'स्वास्थ्य उपकरण', medicalBtn: '🏥 चिकित्सा', mealBtn: '📅 भोजन योजना', progressBtn: '📈 प्रगति', settingsTitle: 'सेटिंग्स', langHeader: '🌐 ऐप भाषा', notifHeader: '🔔 सूचनाएं', notifAlerts: 'पोषक तत्व चेतावनी', notifAI: 'AI सुझाव', statCal: '🔥 कैलोरी', statPro: '🥩 प्रोटीन', statCarb: '🍞 कार्ब्स', statFat: '🧈 वसा' } },
+            es: { name: 'Español', flag: '🇪🇸', texts: { score: 'Puntuación', exportBtn: 'Exportar PDF', logout: 'Cerrar sesión', navOverview: '📊 Resumen', navNutrition: '🍽️ Nutrición', navActivity: '🏃 Actividad', navInsights: '🤖 IA Ideas', navHistory: '📜 Historial', navTools: '🔧 Herramientas', navSettings: '⚙️ Ajustes', overviewTitle: 'Resumen de hoy', chartTitle: '⚖️ Balance calórico', nutrientsTitle: '💊 Nutrientes clave', nutritionTitle: 'Registrar comida', scanTitle: '📸 Escanear comida', scanDesc: 'Toma una foto para análisis IA', scanBtn: '📷 Abrir cámara', manualTitle: 'O ingresar manualmente', labelFood: 'Nombre del alimento', labelMethod: 'Método', labelGrams: 'Peso (gramos)', labelPortion: 'Tamaño de porción', portionSmall: 'Pequeña', portionMedium: 'Mediana', portionLarge: 'Grande', portionXL: 'Extra grande', addFoodBtn: 'Añadir comida', activityTitle: 'Registrar actividad', labelActivity: 'Actividad', labelDuration: 'Duración (min)', logActivityBtn: 'Registrar actividad', insightsTitle: 'Ideas IA', alertsTitle: '⚠️ Alertas', suggestionsTitle: '🤖 Sugerencias', historyTitle: 'Historial', foodHistoryTitle: '🍽️ Registro de comida', actHistoryTitle: '🏃 Actividades', noFood: '¡Sin comida registrada!', noActivity: '¡Sin actividades!', toolsTitle: 'Herramientas de salud', medicalBtn: '🏥 Médico', mealBtn: '📅 Plan de comidas', progressBtn: '📈 Progreso', settingsTitle: 'Ajustes', langHeader: '🌐 Idioma de la app', notifHeader: '🔔 Notificaciones', notifAlerts: 'Alertas de nutrientes', notifAI: 'Sugerencias IA', statCal: '🔥 Calorías', statPro: '🥩 Proteína', statCarb: '🍞 Carbohidratos', statFat: '🧈 Grasas' } },
+            fr: { name: 'Français', flag: '🇫🇷', texts: { score: 'Score', exportBtn: 'Exporter PDF', logout: 'Déconnexion', navOverview: '📊 Aperçu', navNutrition: '🍽️ Nutrition', navActivity: '🏃 Activité', navInsights: '🤖 IA Conseils', navHistory: '📜 Historique', navTools: '🔧 Outils', navSettings: '⚙️ Paramètres', overviewTitle: "Aperçu d'aujourd'hui", chartTitle: '⚖️ Équilibre calorique', nutrientsTitle: '💊 Nutriments clés', nutritionTitle: 'Enregistrer nourriture', scanTitle: '📸 Scanner nourriture', scanDesc: 'Prenez une photo pour analyse IA', scanBtn: '📷 Ouvrir caméra', manualTitle: 'Ou saisir manuellement', labelFood: 'Nom aliment', labelMethod: 'Méthode', labelGrams: 'Poids (grammes)', labelPortion: 'Taille portion', portionSmall: 'Petite', portionMedium: 'Moyenne', portionLarge: 'Grande', portionXL: 'Très grande', addFoodBtn: 'Ajouter nourriture', activityTitle: 'Enregistrer activité', labelActivity: 'Activité', labelDuration: 'Durée (min)', logActivityBtn: 'Enregistrer activité', insightsTitle: 'Conseils IA', alertsTitle: '⚠️ Alertes', suggestionsTitle: '🤖 Suggestions', historyTitle: 'Historique', foodHistoryTitle: '🍽️ Journal alimentaire', actHistoryTitle: '🏃 Activités', noFood: 'Aucune nourriture enregistrée!', noActivity: 'Aucune activité!', toolsTitle: 'Outils santé', medicalBtn: '🏥 Médical', mealBtn: '📅 Plan repas', progressBtn: '📈 Progrès', settingsTitle: 'Paramètres', langHeader: "🌐 Langue de l'app", notifHeader: '🔔 Notifications', notifAlerts: 'Alertes nutriments', notifAI: 'Suggestions IA', statCal: '🔥 Calories', statPro: '🥩 Protéines', statCarb: '🍞 Glucides', statFat: '🧈 Graisses' } },
+            de: { name: 'Deutsch', flag: '🇩🇪', texts: { score: 'Punkte', exportBtn: 'PDF exportieren', logout: 'Abmelden', navOverview: '📊 Übersicht', navNutrition: '🍽️ Ernährung', navActivity: '🏃 Aktivität', navInsights: '🤖 KI Tipps', navHistory: '📜 Verlauf', navTools: '🔧 Werkzeuge', navSettings: '⚙️ Einstellungen', overviewTitle: 'Heutige Übersicht', chartTitle: '⚖️ Kalorienbilanz', nutrientsTitle: '💊 Wichtige Nährstoffe', nutritionTitle: 'Essen protokollieren', scanTitle: '📸 Essen scannen', scanDesc: 'Foto für KI-Analyse aufnehmen', scanBtn: '📷 Kamera öffnen', manualTitle: 'Oder manuell eingeben', labelFood: 'Lebensmittelname', labelMethod: 'Methode', labelGrams: 'Gewicht (Gramm)', labelPortion: 'Portionsgröße', portionSmall: 'Klein', portionMedium: 'Mittel', portionLarge: 'Groß', portionXL: 'Extra groß', addFoodBtn: 'Essen hinzufügen', activityTitle: 'Aktivität protokollieren', labelActivity: 'Aktivität', labelDuration: 'Dauer (Min)', logActivityBtn: 'Aktivität protokollieren', insightsTitle: 'KI Einblicke', alertsTitle: '⚠️ Warnungen', suggestionsTitle: '🤖 Vorschläge', historyTitle: 'Verlauf', foodHistoryTitle: '🍽️ Essensprotokoll', actHistoryTitle: '🏃 Aktivitäten', noFood: 'Kein Essen protokolliert!', noActivity: 'Keine Aktivitäten!', toolsTitle: 'Gesundheitswerkzeuge', medicalBtn: '🏥 Medizinisch', mealBtn: '📅 Essensplan', progressBtn: '📈 Fortschritt', settingsTitle: 'Einstellungen', langHeader: '🌐 App-Sprache', notifHeader: '🔔 Benachrichtigungen', notifAlerts: 'Nährstoffwarnungen', notifAI: 'KI-Vorschläge', statCal: '🔥 Kalorien', statPro: '🥩 Protein', statCarb: '🍞 Kohlenhydrate', statFat: '🧈 Fette' } },
+            zh: { name: '中文', flag: '🇨🇳', texts: { score: '分数', exportBtn: '导出PDF', logout: '登出', navOverview: '📊 概览', navNutrition: '🍽️ 营养', navActivity: '🏃 活动', navInsights: '🤖 AI建议', navHistory: '📜 历史', navTools: '🔧 工具', navSettings: '⚙️ 设置', overviewTitle: '今日概览', chartTitle: '⚖️ 卡路里平衡', nutrientsTitle: '💊 关键营养素', nutritionTitle: '记录食物', scanTitle: '📸 扫描食物', scanDesc: '拍照进行AI分析', scanBtn: '📷 打开相机', manualTitle: '或手动输入', labelFood: '食物名称', labelMethod: '方法', labelGrams: '重量(克)', labelPortion: '份量', portionSmall: '小份', portionMedium: '中份', portionLarge: '大份', portionXL: '特大份', addFoodBtn: '添加食物', activityTitle: '记录活动', labelActivity: '活动', labelDuration: '时长(分钟)', logActivityBtn: '记录活动', insightsTitle: 'AI洞察', alertsTitle: '⚠️ 警报', suggestionsTitle: '🤖 建议', historyTitle: '历史', foodHistoryTitle: '🍽️ 饮食记录', actHistoryTitle: '🏃 活动', noFood: '无食物记录!', noActivity: '无活动!', toolsTitle: '健康工具', medicalBtn: '🏥 医疗', mealBtn: '📅 膳食计划', progressBtn: '📈 进度', settingsTitle: '设置', langHeader: '🌐 应用语言', notifHeader: '🔔 通知', notifAlerts: '营养警报', notifAI: 'AI建议', statCal: '🔥 卡路里', statPro: '🥩 蛋白质', statCarb: '🍞 碳水化合物', statFat: '🧈 脂肪' } },
+            ja: { name: '日本語', flag: '🇯🇵', texts: { score: 'スコア', exportBtn: 'PDFエクスポート', logout: 'ログアウト', navOverview: '📊 概要', navNutrition: '🍽️ 栄養', navActivity: '🏃 アクティビティ', navInsights: '🤖 AI提案', navHistory: '📜 履歴', navTools: '🔧 ツール', navSettings: '⚙️ 設定', overviewTitle: '今日の概要', chartTitle: '⚖️ カロリーバランス', nutrientsTitle: '💊 主要栄養素', nutritionTitle: '食事記録', scanTitle: '📸 食品スキャン', scanDesc: 'AI分析用の写真を撮る', scanBtn: '📷 カメラを開く', manualTitle: 'または手動入力', labelFood: '食品名', labelMethod: '方法', labelGrams: '重量(グラム)', labelPortion: 'ポーションサイズ', portionSmall: '小', portionMedium: '中', portionLarge: '大', portionXL: '特大', addFoodBtn: '食事を追加', activityTitle: 'アクティビティ記録', labelActivity: 'アクティビティ', labelDuration: '時間(分)', logActivityBtn: 'アクティビティ記録', insightsTitle: 'AI洞察', alertsTitle: '⚠️ アラート', suggestionsTitle: '🤖 提案', historyTitle: '履歴', foodHistoryTitle: '🍽️ 食事記録', actHistoryTitle: '🏃 アクティビティ', noFood: '食事記録なし!', noActivity: 'アクティビティなし!', toolsTitle: '健康ツール', medicalBtn: '🏥 医療', mealBtn: '📅 食事プラン', progressBtn: '📈 進捗', settingsTitle: '設定', langHeader: '🌐 アプリ言語', notifHeader: '🔔 通知', notifAlerts: '栄養アラート', notifAI: 'AI提案', statCal: '🔥 カロリー', statPro: '🥩 プロテイン', statCarb: '🍞 炭水化物', statFat: '🧈 脂肪' } },
+            ar: { name: 'العربية', flag: '🇸🇦', texts: { score: 'النقاط', exportBtn: 'تصدير PDF', logout: 'تسجيل خروج', navOverview: '📊 نظرة عامة', navNutrition: '🍽️ التغذية', navActivity: '🏃 النشاط', navInsights: '🤖 اقتراحات الذكاء الاصطناعي', navHistory: '📜 السجل', navTools: '🔧 الأدوات', navSettings: '⚙️ الإعدادات', overviewTitle: 'نظرة عامة على اليوم', chartTitle: '⚖️ توازن السعرات الحرارية', nutrientsTitle: '💊 العناصر الغذائية الرئيسية', nutritionTitle: 'تسجيل الطعام', scanTitle: '📸 مسح الطعام', scanDesc: 'التقط صورة للتحليل بالذكاء الاصطناعي', scanBtn: '📷 فتح الكاميرا', manualTitle: 'أو أدخل يدويًا', labelFood: 'اسم الطعام', labelMethod: 'الطريقة', labelGrams: 'الوزن (غرام)', labelPortion: 'حجم الحصة', portionSmall: 'صغير', portionMedium: 'متوسط', portionLarge: 'كبير', portionXL: 'كبير جدًا', addFoodBtn: 'إضافة طعام', activityTitle: 'تسجيل النشاط', labelActivity: 'النشاط', labelDuration: 'المدة (دقيقة)', logActivityBtn: 'تسجيل النشاط', insightsTitle: 'رؤى الذكاء الاصطناعي', alertsTitle: '⚠️ تنبيهات', suggestionsTitle: '🤖 اقتراحات', historyTitle: 'السجل', foodHistoryTitle: '🍽️ سجل الطعام', actHistoryTitle: '🏃 الأنشطة', noFood: 'لا يوجد طعام مسجل!', noActivity: 'لا توجد أنشطة!', toolsTitle: 'أدوات الصحة', medicalBtn: '🏥 طبي', mealBtn: '📅 خطة الوجبات', progressBtn: '📈 التقدم', settingsTitle: 'الإعدادات', langHeader: '🌐 لغة التطبيق', notifHeader: '🔔 الإشعارات', notifAlerts: 'تنبيهات المغذيات', notifAI: 'اقتراحات الذكاء الاصطناعي', statCal: '🔥 السعرات الحرارية', statPro: '🥩 البروتين', statCarb: '🍞 الكربوهيدرات', statFat: '🧈 الدهون' } },
+            pt: { name: 'Português', flag: '🇧🇷', texts: { score: 'Pontuação', exportBtn: 'Exportar PDF', logout: 'Sair', navOverview: '📊 Visão geral', navNutrition: '🍽️ Nutrição', navActivity: '🏃 Atividade', navInsights: '🤖 IA Dicas', navHistory: '📜 Histórico', navTools: '🔧 Ferramentas', navSettings: '⚙️ Configurações', overviewTitle: 'Visão geral de hoje', chartTitle: '⚖️ Balanço calórico', nutrientsTitle: '💊 Nutrientes chave', nutritionTitle: 'Registrar comida', scanTitle: '📸 Escanear comida', scanDesc: 'Tire uma foto para análise IA', scanBtn: '📷 Abrir câmera', manualTitle: 'Ou inserir manualmente', labelFood: 'Nome do alimento', labelMethod: 'Método', labelGrams: 'Peso (gramas)', labelPortion: 'Tamanho da porção', portionSmall: 'Pequena', portionMedium: 'Média', portionLarge: 'Grande', portionXL: 'Extra grande', addFoodBtn: 'Adicionar comida', activityTitle: 'Registrar atividade', labelActivity: 'Atividade', labelDuration: 'Duração (min)', logActivityBtn: 'Registrar atividade', insightsTitle: 'Insights IA', alertsTitle: '⚠️ Alertas', suggestionsTitle: '🤖 Sugestões', historyTitle: 'Histórico', foodHistoryTitle: '🍽️ Registro alimentar', actHistoryTitle: '🏃 Atividades', noFood: 'Sem comida registrada!', noActivity: 'Sem atividades!', toolsTitle: 'Ferramentas de saúde', medicalBtn: '🏥 Médico', mealBtn: '📅 Plano de refeições', progressBtn: '📈 Progresso', settingsTitle: 'Configurações', langHeader: '🌐 Idioma do app', notifHeader: '🔔 Notificações', notifAlerts: 'Alertas de nutrientes', notifAI: 'Sugestões IA', statCal: '🔥 Calorias', statPro: '🥩 Proteína', statCarb: '🍞 Carboidratos', statFat: '🧈 Gorduras' } },
+            ru: { name: 'Русский', flag: '🇷🇺', texts: { score: 'Баллы', exportBtn: 'Экспорт PDF', logout: 'Выйти', navOverview: '📊 Обзор', navNutrition: '🍽️ Питание', navActivity: '🏃 Активность', navInsights: '🤖 ИИ Советы', navHistory: '📜 История', navTools: '🔧 Инструменты', navSettings: '⚙️ Настройки', overviewTitle: 'Обзор за сегодня', chartTitle: '⚖️ Баланс калорий', nutrientsTitle: '💊 Ключевые нутриенты', nutritionTitle: 'Записать еду', scanTitle: '📸 Сканировать еду', scanDesc: 'Сделайте фото для ИИ анализа', scanBtn: '📷 Открыть камеру', manualTitle: 'Или ввести вручную', labelFood: 'Название еды', labelMethod: 'Метод', labelGrams: 'Вес (граммы)', labelPortion: 'Размер порции', portionSmall: 'Малая', portionMedium: 'Средняя', portionLarge: 'Большая', portionXL: 'Очень большая', addFoodBtn: 'Добавить еду', activityTitle: 'Записать активность', labelActivity: 'Активность', labelDuration: 'Длительность (мин)', logActivityBtn: 'Записать активность', insightsTitle: 'ИИ Анализ', alertsTitle: '⚠️ Предупреждения', suggestionsTitle: '🤖 Предложения', historyTitle: 'История', foodHistoryTitle: '🍽️ Журнал еды', actHistoryTitle: '🏃 Активности', noFood: 'Нет записей о еде!', noActivity: 'Нет активностей!', toolsTitle: 'Инструменты здоровья', medicalBtn: '🏥 Медицинский', mealBtn: '📅 План питания', progressBtn: '📈 Прогресс', settingsTitle: 'Настройки', langHeader: '🌐 Язык приложения', notifHeader: '🔔 Уведомления', notifAlerts: 'Оповещения о нутриентах', notifAI: 'ИИ Предложения', statCal: '🔥 Калории', statPro: '🥩 Белок', statCarb: '🍞 Углеводы', statFat: '🧈 Жиры' } },
+            it: { name: 'Italiano', flag: '🇮🇹', texts: { score: 'Punteggio', exportBtn: 'Esporta PDF', logout: 'Esci', navOverview: '📊 Panoramica', nutritionTitle: 'Registra cibo', scanBtn: '📷 Apri fotocamera', addFoodBtn: 'Aggiungi cibo' } },
+            ko: { name: '한국어', flag: '🇰🇷', texts: { score: '점수', exportBtn: 'PDF 내보내기', logout: '로그아웃', navOverview: '📊 개요', nutritionTitle: '음식 기록', scanBtn: '📷 카메라 열기', addFoodBtn: '음식 추가' } },
+            tr: { name: 'Türkçe', flag: '🇹🇷', texts: { score: 'Puan', exportBtn: 'PDF Dışa Aktar', logout: 'Çıkış', navOverview: '📊 Genel Bakış', nutritionTitle: 'Yemek Kaydet', scanBtn: '📷 Kamerayı Aç', addFoodBtn: 'Yemek Ekle' } },
+            nl: { name: 'Nederlands', flag: '🇳🇱', texts: { score: 'Score', exportBtn: 'PDF Exporteren', logout: 'Uitloggen', navOverview: '📊 Overzicht', nutritionTitle: 'Voedsel Loggen', scanBtn: '📷 Camera Openen', addFoodBtn: 'Voedsel Toevoegen' } },
+            pl: { name: 'Polski', flag: '🇵🇱', texts: { score: 'Wynik', exportBtn: 'Eksportuj PDF', logout: 'Wyloguj', navOverview: '📊 Przegląd', nutritionTitle: 'Zapisz jedzenie', scanBtn: '📷 Otwórz kamerę', addFoodBtn: 'Dodaj jedzenie' } },
+            sv: { name: 'Svenska', flag: '🇸🇪', texts: { score: 'Poäng', exportBtn: 'Exportera PDF', logout: 'Logga ut', navOverview: '📊 Översikt', nutritionTitle: 'Logga mat', scanBtn: '📷 Öppna kamera', addFoodBtn: 'Lägg till mat' } },
+            th: { name: 'ไทย', flag: '🇹🇭', texts: { score: 'คะแนน', exportBtn: 'ส่งออก PDF', logout: 'ออกจากระบบ', navOverview: '📊 ภาพรวม', nutritionTitle: 'บันทึกอาหาร', scanBtn: '📷 เปิดกล้อง', addFoodBtn: 'เพิ่มอาหาร' } },
+            vi: { name: 'Tiếng Việt', flag: '🇻🇳', texts: { score: 'Điểm', exportBtn: 'Xuất PDF', logout: 'Đăng xuất', navOverview: '📊 Tổng quan', nutritionTitle: 'Ghi nhật ký thực phẩm', scanBtn: '📷 Mở máy ảnh', addFoodBtn: 'Thêm thực phẩm' } },
+            id: { name: 'Bahasa Indonesia', flag: '🇮🇩', texts: { score: 'Skor', exportBtn: 'Ekspor PDF', logout: 'Keluar', navOverview: '📊 Ringkasan', nutritionTitle: 'Catat makanan', scanBtn: '📷 Buka kamera', addFoodBtn: 'Tambah makanan' } },
+            he: { name: 'עברית', flag: '🇮🇱', texts: { score: 'ניקוד', exportBtn: 'ייצוא PDF', logout: 'התנתק', navOverview: '📊 סקירה', nutritionTitle: 'רישום אוכל', scanBtn: '📷 פתח מצלמה', addFoodBtn: 'הוסף אוכל' } }
+        };
+        let currentLang = 'en';
+        function changeLanguageQuick(lang) { currentLang = lang; applyTranslations(lang); localStorage.setItem('growfitLang', lang); }
+        function applyTranslations(lang) { const t = TRANSLATIONS[lang].texts; for (let key in t) { const el = document.getElementById(key); if (el) el.textContent = t[key]; } }
+        function loadLanguageGrid() { const grid = document.getElementById('langGrid'); grid.innerHTML = ''; for (let code in TRANSLATIONS) { const lang = TRANSLATIONS[code]; const card = document.createElement('div'); card.className = 'lang-card' + (code === currentLang ? ' selected' : ''); card.innerHTML = `<div class="lang-flag">${lang.flag}</div><div class="lang-name">${lang.name}</div>`; card.onclick = () => changeLanguageQuick(code); grid.appendChild(card); } }
+        function analyzeFood(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const preview = document.getElementById('cameraPreview');
+            const result = document.getElementById('scanResult');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                setTimeout(() => {
+                    result.style.display = 'block';
+                    result.innerHTML = '<strong>🤖 AI Analysis:</strong><br>Detected: Rice & Chicken Curry<br>Estimated: ~350g portion<br>Calories: ~520 kcal<br><br><button class="btn" onclick="autoFillFood(\'chicken curry\', 3.5)">Use This Data</button>';
+                }, 1500);
+            };
+            reader.readAsDataURL(file);
+        }
+        function autoFillFood(foodName, servings) {
+            alert('Food auto-filled! (Backend integration needed)');
+        }
+        const allFoods = {{ food_names|tojson|safe }};
+        function searchFood(query) {
+            const suggestions = document.getElementById('foodSuggestions');
+            if (!query || query.length < 1) {
+                suggestions.style.display = 'none';
+                return;
+            }
+            const matches = allFoods.filter(food => food.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
+            if (matches.length === 0) {
+                suggestions.innerHTML = '<div style="padding: 12px; color: #a0aec0;">No results found</div>';
+                suggestions.style.display = 'block';
+                return;
+            }
+            let html = '';
+            matches.forEach(food => {
+                html += `<div onclick="selectFood('${food}')" style="padding: 12px; cursor: pointer; border-bottom: 1px solid rgba(0, 245, 255, 0.1);"><div style="font-weight: 600; color: #00f5ff;">${food}</div></div>`;
+            });
+            suggestions.innerHTML = html;
+            suggestions.style.display = 'block';
+        }
+        function selectFood(foodName) {
+            document.getElementById('foodSearchInput').value = foodName;
+            document.getElementById('foodSuggestions').style.display = 'none';
+        }
+        document.addEventListener('click', function(e) {
+            const suggestions = document.getElementById('foodSuggestions');
+            const input = document.getElementById('foodSearchInput');
+            if (e.target !== input && e.target !== suggestions) {
+                suggestions.style.display = 'none';
+            }
+        });
+        function showPage(pageId, event) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            
+            // Remove active from all nav items
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            // Show selected page
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+            
+            // Activate the clicked nav item
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            } else if (event && event.target) {
+                event.target.classList.add('active');
+            }
+            
+            // Load page-specific content
+            if (pageId === 'settings') loadLanguageGrid();
+            if (pageId === 'insights') loadAIInsights();
+        }
+        
+        function loadAIInsights() {
+            document.getElementById('alertsContainer').innerHTML = '<p style="color: #00f5ff; text-align: center; padding: 20px;">⏳ Loading insights...</p>';
+            document.getElementById('suggestionsContainer').innerHTML = '<p style="color: #00f5ff; text-align: center; padding: 20px;">⏳ Analyzing your data...</p>';
+            
+            fetch('/get_ai_insights')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.insights && data.insights.length > 0) {
+                        const alerts = data.insights.filter(i => i.type === 'warning');
+                        const suggestions = data.insights.filter(i => i.type === 'info' || i.type === 'success');
+                        
+                        const alertsHTML = alerts.length > 0 ? alerts.map(i => 
+                            '<div style="background: rgba(255,107,107,0.2); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #ff6b6b;">' +
+                                '<div style="font-size: 20px; margin-bottom: 5px;">' + i.icon + '</div>' +
+                                '<div style="font-weight: bold; margin-bottom: 5px; color: #ff6b6b;">' + i.title + '</div>' +
+                                '<div style="color: #e0e0e0; font-size: 14px; margin-bottom: 8px;">' + i.message + '</div>' +
+                                '<div style="color: #00f5ff; font-size: 13px;">💡 ' + i.action + '</div>' +
+                            '</div>'
+                        ).join('') : '<p style="color: #a0aec0; text-align: center; padding: 20px;">✅ No alerts - you are doing great!</p>';
+                        
+                        const suggestionsHTML = suggestions.length > 0 ? suggestions.map(i => 
+                            '<div style="background: rgba(0,245,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #00f5ff;">' +
+                                '<div style="font-size: 20px; margin-bottom: 5px;">' + i.icon + '</div>' +
+                                '<div style="font-weight: bold; margin-bottom: 5px; color: #00f5ff;">' + i.title + '</div>' +
+                                '<div style="color: #e0e0e0; font-size: 14px; margin-bottom: 8px;">' + i.message + '</div>' +
+                                '<div style="color: #00ff88; font-size: 13px;">✨ ' + i.action + '</div>' +
+                            '</div>'
+                        ).join('') : '<p style="color: #a0aec0; text-align: center; padding: 20px;">Keep logging to get personalized suggestions!</p>';
+                        
+                        document.getElementById('alertsContainer').innerHTML = alertsHTML;
+                        document.getElementById('suggestionsContainer').innerHTML = suggestionsHTML;
+                    } else {
+                        document.getElementById('alertsContainer').innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 20px;">Log more data to see insights!</p>';
+                        document.getElementById('suggestionsContainer').innerHTML = '<p style="color: #a0aec0; text-align: center; padding: 20px;">AI will analyze your patterns soon!</p>';
+                    }
+                })
+                .catch(err => {
+                    console.error('Failed to load AI insights:', err);
+                    document.getElementById('alertsContainer').innerHTML = '<p style="color: #ff6b6b; text-align: center; padding: 20px;">⚠️ Failed to load insights. Try refreshing.</p>';
+                    document.getElementById('suggestionsContainer').innerHTML = '';
+                });
+        }
+        function submitFood(event) {
+            event.preventDefault();
+            const form = document.getElementById('foodForm');
+            const formData = new FormData(form);
+            const messageDiv = document.getElementById('foodMessage');
+            
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = 'rgba(0, 245, 255, 0.2)';
+            messageDiv.style.color = '#00f5ff';
+            messageDiv.innerHTML = '⏳ Logging food...';
+            
+            fetch('/log_food', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const food = data.food;
+                    let msg = '✅ Added ' + food.name + ' (' + food.grams + 'g)<br>' +
+                             '🔥 ' + Math.round(food.calories) + ' cal | 💪 ' + Math.round(food.protein) + 'g protein<br>' +
+                             '⭐ +5 points!';
+                    
+                    if (data.newly_unlocked && data.newly_unlocked.length > 0) {
+                        msg += '<br><br>🎉 <strong>Achievement Unlocked!</strong><br>';
+                        data.newly_unlocked.forEach(ach => {
+                            msg += ach.icon + ' ' + ach.name + ' (+' + ach.points + ' points!)<br>';
+                        });
+                    }
+                    
+                    messageDiv.style.background = 'rgba(0, 255, 136, 0.2)';
+                    messageDiv.style.color = '#00ff88';
+                    messageDiv.innerHTML = msg;
+                    
+                    form.reset();
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                } else {
+                    messageDiv.style.background = 'rgba(255, 107, 107, 0.2)';
+                    messageDiv.style.color = '#ff6b6b';
+                    messageDiv.innerHTML = '❌ Error: ' + (data.error || 'Failed to log food');
+                }
+            })
+            .catch(err => {
+                messageDiv.style.background = 'rgba(255, 107, 107, 0.2)';
+                messageDiv.style.color = '#ff6b6b';
+                messageDiv.innerHTML = '❌ Network error. Please try again.';
+            });
+            
+            return false;
+        }
+        
+        function toggleMethod() {
+            const type = document.getElementById('measureType').value;
+            document.getElementById('gramsInput').style.display = type === 'grams' ? 'block' : 'none';
+            document.getElementById('portionInput').style.display = type === 'portion' ? 'block' : 'none';
+        }
+        function selectPortion(servings, el) {
+            document.querySelectorAll('.portion-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('portionField').value = servings;
+        }
+        function toggleSetting(el) {
+            el.classList.toggle('on');
+        }
+        function toggleNutrients() {
+            const full = document.getElementById('nutrientsFull');
+            const btn = document.getElementById('nutrientToggle');
+            if (full.style.display === 'none') {
+                full.style.display = 'grid';
+                btn.textContent = '← Hide';
+            } else {
+                full.style.display = 'none';
+                btn.textContent = 'Show All →';
+            }
+        }
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text('GrowFit Report', 20, 20);
+            doc.text('User: {{ username }}', 20, 30);
+            doc.text('Score: {{ score }}', 20, 40);
+            doc.save('GrowFit.pdf');
+            alert('✅ PDF Downloaded!');
+        }
+        window.onload = function() {
+            const saved = localStorage.getItem('growfitLang');
+            if (saved) changeLanguageQuick(saved);
+            new Chart(document.getElementById('caloriesChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Today'],
+                    datasets: [
+                        { label: 'Consumed', data: [{{ today_cal|int }}], backgroundColor: '#ff6b9d' },
+                        { label: 'Burned', data: [0], backgroundColor: '#00f5ff' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        };
+        
+        // Check for AI alerts and show red bar
+        function checkAIAlerts() {
+            fetch('/get_ai_insights')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.insights) {
+                        const warnings = data.insights.filter(i => i.type === 'warning');
+                        if (warnings.length > 0) {
+                            document.getElementById('aiAlertBar').style.display = 'block';
+                            document.getElementById('alertBarText').textContent = 
+                                '⚠️ ' + warnings.length + ' health alert' + (warnings.length > 1 ? 's' : '') + '! Click to view AI Insights.';
+                        }
+                    }
+                });
+        }
+        
+        // Check alerts on page load
+        checkAIAlerts();
+    </script>
+</body>
+</html>

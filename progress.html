@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Progress Graphs - GrowFit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0e27; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .back-btn { background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; margin-bottom: 20px; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #667eea; margin-bottom: 10px; }
+        h2 { color: #667eea; font-size: 20px; margin-bottom: 15px; }
+        .period-selector { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .period-btn { padding: 10px 20px; background: #e0e0e0; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; text-decoration: none; color: #333; display: inline-block; }
+        .period-btn.active { background: #667eea; color: white; }
+        .chart-container { position: relative; height: 400px; margin-bottom: 30px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #667eea; }
+        .stat-label { color: #666; font-size: 14px; margin-top: 5px; }
+        .stat-change { font-size: 14px; margin-top: 8px; font-weight: 600; }
+        .stat-change.up { color: #4CAF50; }
+        .stat-change.down { color: #F44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+        <div class="card">
+            <h1>📊 Your Progress Graphs</h1>
+            <p style="color: #666; margin-bottom: 20px;">Track your nutrition journey over time</p>
+            <div class="period-selector">
+                <a href="/progress?period=7" class="period-btn {{'active' if period==7 else ''}}">Last 7 Days</a>
+                <a href="/progress?period=14" class="period-btn {{'active' if period==14 else ''}}">Last 2 Weeks</a>
+                <a href="/progress?period=30" class="period-btn {{'active' if period==30 else ''}}">Last Month</a>
+                <a href="/progress?period=90" class="period-btn {{'active' if period==90 else ''}}">Last 3 Months</a>
+            </div>
+            {% if no_data %}
+            <p style="text-align: center; color: #999; padding: 40px;">No data yet! Start logging food to see your progress.</p>
+            {% else %}
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value">{{ avg_calories|round }}</div><div class="stat-label">Avg Daily Calories</div>{% if change_calories > 0 %}<div class="stat-change up">↑ {{ change_calories|round }}% vs last period</div>{% elif change_calories < 0 %}<div class="stat-change down">↓ {{ change_calories|abs|round }}% vs last period</div>{% endif %}</div>
+                <div class="stat-card"><div class="stat-value">{{ avg_protein|round(1) }}g</div><div class="stat-label">Avg Daily Protein</div>{% if change_protein > 0 %}<div class="stat-change up">↑ {{ change_protein|round }}%</div>{% elif change_protein < 0 %}<div class="stat-change down">↓ {{ change_protein|abs|round }}%</div>{% endif %}</div>
+                <div class="stat-card"><div class="stat-value">{{ streak }}</div><div class="stat-label">Current Streak (days)</div></div>
+                <div class="stat-card"><div class="stat-value">{{ total_foods }}</div><div class="stat-label">Foods Logged</div></div>
+            </div>
+            <h2 style="margin-top: 30px;">Calorie Trends</h2>
+            <div class="chart-container"><canvas id="calorieChart"></canvas></div>
+            <h2>Protein Intake</h2>
+            <div class="chart-container"><canvas id="proteinChart"></canvas></div>
+            <h2>Macronutrient Balance</h2>
+            <div class="chart-container"><canvas id="macroChart"></canvas></div>
+            <h2>Vitamins & Minerals (Average)</h2>
+            <div class="chart-container"><canvas id="vitaminChart"></canvas></div>
+            <script>
+                new Chart(document.getElementById('calorieChart'), { type: 'line', data: { labels: {{ dates|tojson }}, datasets: [{ label: 'Daily Calories', data: {{ calories_data|tojson }}, borderColor: '#667eea', backgroundColor: 'rgba(102,126,234,0.1)', tension: 0.4, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+                new Chart(document.getElementById('proteinChart'), { type: 'line', data: { labels: {{ dates|tojson }}, datasets: [{ label: 'Daily Protein (g)', data: {{ protein_data|tojson }}, borderColor: '#E91E63', backgroundColor: 'rgba(233,30,99,0.1)', tension: 0.4, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+                new Chart(document.getElementById('macroChart'), { type: 'line', data: { labels: {{ dates|tojson }}, datasets: [{ label: 'Protein (g)', data: {{ protein_data|tojson }}, borderColor: '#E91E63', tension: 0.4 }, { label: 'Carbs (g)', data: {{ carbs_data|tojson }}, borderColor: '#FF9800', tension: 0.4 }, { label: 'Fats (g)', data: {{ fats_data|tojson }}, borderColor: '#2196F3', tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+                new Chart(document.getElementById('vitaminChart'), { type: 'bar', data: { labels: ['Vit A', 'Vit C', 'Vit D', 'Iron', 'Calcium', 'Zinc'], datasets: [{ label: 'Average Daily Intake', data: [{{ avg_vita|round(1) }}, {{ avg_vitc|round(1) }}, {{ avg_vitd|round(1) }}, {{ avg_iron|round(1) }}, {{ avg_calc|round(1) }}, {{ avg_zinc|round(1) }}], backgroundColor: ['#1976D2','#F57C00','#C2185B','#F57F17','#7B1FA2','#00796B'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+            </script>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

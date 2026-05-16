@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up - GrowFit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .signup-container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); max-width: 500px; width: 100%; }
+        h1 { color: #667eea; margin-bottom: 10px; font-size: 32px; text-align: center; }
+        p { color: #666; text-align: center; margin-bottom: 30px; font-size: 14px; }
+        .step-indicator { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+        .step { width: 40px; height: 4px; background: #e0e0e0; border-radius: 2px; transition: all 0.3s; }
+        .step.active { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .form-step { display: none; }
+        .form-step.active { display: block; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; transition: all 0.3s; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #667eea; }
+        .optional-badge { background: #f0f0f0; color: #666; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 5px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .btn-secondary { background: white; color: #667eea; border: 2px solid #667eea; margin-top: 10px; }
+        .btn-secondary:hover { background: #f8f9ff; }
+        .btn-back { background: #f0f0f0; color: #666; margin-top: 10px; }
+        .btn-back:hover { background: #e0e0e0; }
+        .error { background: #fee; color: #c00; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; border-left: 4px solid #c00; }
+        .login-link { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        .login-link a { color: #667eea; text-decoration: none; font-weight: 600; }
+        .login-link a:hover { text-decoration: underline; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .optional-section { background: #f8f9ff; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea; margin-bottom: 20px; }
+        .optional-section h3 { color: #667eea; font-size: 16px; margin-bottom: 10px; }
+        .optional-section p { text-align: left; font-size: 13px; color: #666; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <h1>🏋️ Join GrowFit</h1>
+        <p>Create your account and start your health journey</p>
+        
+        <div class="step-indicator">
+            <div class="step active" id="step1"></div>
+            <div class="step" id="step2"></div>
+        </div>
+        
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+        
+        <form method="POST" action="/signup" id="signupForm">
+            <!-- Step 1: Basic Info -->
+            <div class="form-step active" id="stepContent1">
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" name="username" required placeholder="Choose a username">
+                </div>
+                
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" name="password" required placeholder="Create a strong password">
+                </div>
+                
+                <div class="form-group">
+                    <label>Email <span class="optional-badge">OPTIONAL</span></label>
+                    <input type="email" name="email" placeholder="your@email.com">
+                </div>
+                
+                <button type="button" class="btn btn-primary" onclick="goToStep(2)">Continue to Profile →</button>
+                <button type="button" class="btn btn-secondary" onclick="skipProfile()">Skip Profile Setup</button>
+            </div>
+            
+            <!-- Step 2: Optional Profile -->
+            <div class="form-step" id="stepContent2">
+                <div class="optional-section">
+                    <h3>📊 Optional Profile Setup</h3>
+                    <p>Help us personalize your experience! These fields are optional and can be filled later in Settings.</p>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select name="gender">
+                            <option value="">Select...</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" name="age" min="15" max="100" placeholder="e.g., 25">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Height (cm)</label>
+                        <input type="number" name="height" min="100" max="250" step="0.1" placeholder="e.g., 170">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Weight (kg)</label>
+                        <input type="number" name="weight" min="30" max="200" step="0.1" placeholder="e.g., 70">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Health Goal</label>
+                    <select name="goal">
+                        <option value="">Select...</option>
+                        <option value="gain">Weight Gain (Muscle Building)</option>
+                        <option value="lose">Weight Loss (Fat Loss)</option>
+                        <option value="maintain">Maintain Weight</option>
+                        <option value="recomp">Body Recomposition</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Diet Type</label>
+                    <select name="diet_type">
+                        <option value="">Select...</option>
+                        <option value="veg">Vegetarian</option>
+                        <option value="nonveg">Non-Vegetarian</option>
+                        <option value="vegan">Vegan</option>
+                        <option value="eggetarian">Eggetarian</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Food Allergies</label>
+                    <input type="text" name="allergies" placeholder="e.g., Peanuts, Dairy, Gluten">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">✨ Create Account</button>
+                <button type="button" class="btn btn-back" onclick="goToStep(1)">← Back</button>
+            </div>
+        </form>
+        
+        <div class="login-link">
+            Already have an account? <a href="/login">Log in</a>
+        </div>
+    </div>
+    
+    <script>
+        function goToStep(step) {
+            // Validate step 1 fields
+            if (step === 2) {
+                const username = document.querySelector('input[name="username"]').value;
+                const password = document.querySelector('input[name="password"]').value;
+                
+                if (!username || !password) {
+                    alert('Please fill in username and password');
+                    return;
+                }
+            }
+            
+            // Hide all steps
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            
+            // Show selected step
+            document.getElementById('stepContent' + step).classList.add('active');
+            document.getElementById('step' + step).classList.add('active');
+            if (step === 2) document.getElementById('step1').classList.add('active');
+        }
+        
+        function skipProfile() {
+            // Submit form with only basic info
+            document.getElementById('signupForm').submit();
+        }
+    </script>
+</body>
+</html>

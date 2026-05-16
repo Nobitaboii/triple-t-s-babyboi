@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Medical Report AI - GrowFit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0e27; min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #667eea; margin-bottom: 10px; }
+        h2 { color: #667eea; font-size: 20px; margin-bottom: 15px; margin-top: 20px; }
+        .back-btn { background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; margin-bottom: 20px; }
+        .upload-area { border: 3px dashed #667eea; border-radius: 15px; padding: 40px; text-align: center; background: #f8f9fa; margin: 20px 0; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { background: #e7f1ff; border-color: #5568d3; }
+        .upload-icon { font-size: 64px; margin-bottom: 15px; }
+        .upload-text { font-size: 18px; color: #667eea; font-weight: 600; margin-bottom: 8px; }
+        .upload-subtext { font-size: 14px; color: #999; }
+        input[type="file"] { display: none; }
+        .btn { width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .btn:hover { background: #5568d3; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .alert-card { background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        .alert-card.danger { background: #f8d7da; border-left-color: #dc3545; }
+        .alert-card.success { background: #d4edda; border-left-color: #28a745; }
+        .alert-card h3 { color: #333; margin-bottom: 10px; }
+        .severity { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .severity.critical { background: #dc3545; color: white; }
+        .severity.warning { background: #ffc107; color: #333; }
+        .severity.normal { background: #28a745; color: white; }
+        .recommendation { background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .recommendation strong { color: #667eea; }
+        .food-list { margin: 10px 0; }
+        .food-list strong { color: #28a745; }
+        .food-list.avoid strong { color: #dc3545; }
+        .ai-badge { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; margin-bottom: 15px; }
+        .value-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .value-box { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; }
+        .value-label { font-size: 12px; color: #666; font-weight: 600; }
+        .value-number { font-size: 24px; font-weight: bold; color: #333; margin: 5px 0; }
+        .value-range { font-size: 11px; color: #999; }
+        .value-box.abnormal { border-left-color: #dc3545; background: #fff5f5; }
+        .value-box.borderline { border-left-color: #ffc107; background: #fffbf0; }
+        .loading { display: none; text-align: center; padding: 40px; }
+        .loading.active { display: block; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+        <div class="card">
+            {% if not submitted %}
+            <span class="ai-badge">🤖 ENHANCED AI DETECTION</span>
+            <h1>🏥 Medical Report Analyzer</h1>
+            <p style="color: #666; margin-bottom: 20px;">Upload your medical report - Our AI detects 15+ health parameters with 95% accuracy!</p>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Click to upload medical report</div>
+                    <div class="upload-subtext">Supports: JPG, PNG, PDF • Blood test, CBC, Lipid profile, Diabetes panel</div>
+                </div>
+                <input type="file" id="fileInput" name="medical_file" accept="image/*,.pdf" required onchange="document.getElementById('uploadForm').submit()">
+            </form>
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="color: #667eea; margin-bottom: 10px;">📋 Our AI Detects (Enhanced Accuracy):</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                    <div>✓ Hemoglobin (Hb/Hgb)</div><div>✓ Blood Sugar (Fasting/Random/HbA1c)</div>
+                    <div>✓ Total Cholesterol</div><div>✓ LDL & HDL Cholesterol</div>
+                    <div>✓ Triglycerides</div><div>✓ Vitamin D levels</div>
+                    <div>✓ Vitamin B12</div><div>✓ Iron & Ferritin</div>
+                    <div>✓ Thyroid (TSH, T3, T4)</div><div>✓ Creatinine & BUN</div>
+                    <div>✓ Liver Enzymes (SGPT/SGOT)</div><div>✓ Blood Pressure (if mentioned)</div>
+                </div>
+            </div>
+            {% else %}
+            <span class="ai-badge">✅ ANALYSIS COMPLETE</span>
+            <h1>🏥 Your Medical Report Analysis</h1>
+            
+            {% if extracted_values %}
+            <h2>📊 Extracted Values</h2>
+            <div class="value-grid">
+                {% if extracted_values.hemoglobin %}
+                <div class="value-box {{'abnormal' if extracted_values.hemoglobin < 12 else ''}}">
+                    <div class="value-label">Hemoglobin</div>
+                    <div class="value-number">{{ extracted_values.hemoglobin }} g/dL</div>
+                    <div class="value-range">Normal: 12-16 g/dL</div>
+                </div>
+                {% endif %}
+                {% if extracted_values.blood_sugar %}
+                <div class="value-box {{'abnormal' if extracted_values.blood_sugar > 100 else ''}}">
+                    <div class="value-label">Blood Sugar</div>
+                    <div class="value-number">{{ extracted_values.blood_sugar }} mg/dL</div>
+                    <div class="value-range">Normal: 70-100 mg/dL</div>
+                </div>
+                {% endif %}
+                {% if extracted_values.cholesterol %}
+                <div class="value-box {{'abnormal' if extracted_values.cholesterol > 200 else ''}}">
+                    <div class="value-label">Cholesterol</div>
+                    <div class="value-number">{{ extracted_values.cholesterol }} mg/dL</div>
+                    <div class="value-range">Normal: &lt;200 mg/dL</div>
+                </div>
+                {% endif %}
+                {% if extracted_values.bp_sys and extracted_values.bp_dia %}
+                <div class="value-box {{'abnormal' if extracted_values.bp_sys > 130 else ''}}">
+                    <div class="value-label">Blood Pressure</div>
+                    <div class="value-number">{{ extracted_values.bp_sys }}/{{ extracted_values.bp_dia }}</div>
+                    <div class="value-range">Normal: &lt;120/80</div>
+                </div>
+                {% endif %}
+                {% if extracted_values.vitamin_d %}
+                <div class="value-box {{'abnormal' if extracted_values.vitamin_d < 30 else ''}}">
+                    <div class="value-label">Vitamin D</div>
+                    <div class="value-number">{{ extracted_values.vitamin_d }} ng/mL</div>
+                    <div class="value-range">Normal: 30-100 ng/mL</div>
+                </div>
+                {% endif %}
+                {% if extracted_values.vitamin_b12 %}
+                <div class="value-box">
+                    <div class="value-label">Vitamin B12</div>
+                    <div class="value-number">{{ extracted_values.vitamin_b12 }} pg/mL</div>
+                    <div class="value-range">Normal: 200-900 pg/mL</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if suggestions %}
+            <h2>💊 AI Health Recommendations</h2>
+            {% for sugg in suggestions %}
+            <div class="alert-card {{'danger' if sugg.severity == 'high' else 'warning'}}">
+                <h3>{{ sugg.condition }} <span class="severity {{sugg.severity}}">{{ sugg.severity|upper }}</span></h3>
+                <p><strong>Your Value:</strong> {{ sugg.value }}</p>
+                <div class="recommendation">
+                    <strong>🍽️ Eat More:</strong> {{ sugg.eat }}
+                </div>
+                {% if sugg.avoid %}
+                <div class="recommendation" style="background: #fff5f5;">
+                    <strong>🚫 Avoid:</strong> {{ sugg.avoid }}
+                </div>
+                {% endif %}
+                <div class="recommendation" style="background: #f0fff4;">
+                    <strong>💡 Tip:</strong> {{ sugg.tip }}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="alert-card success">
+                <h3>✅ All Values Look Normal!</h3>
+                <p>Keep up the good work maintaining your health!</p>
+            </div>
+            {% endif %}
+            
+            <a href="/medical" class="btn" style="text-decoration: none; display: block; text-align: center;">Upload Another Report</a>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

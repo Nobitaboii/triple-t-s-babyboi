@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analytics - GrowFit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0e27; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #667eea; margin-bottom: 20px; }
+        h2 { color: #667eea; font-size: 20px; margin-bottom: 15px; }
+        .back-btn { background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; margin-bottom: 20px; }
+        .deficiency-item { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        .deficiency-item.critical { background: #f8d7da; border-left-color: #dc3545; }
+        .risk-item { background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        .risk-item.medium { background: #fff3cd; border-left-color: #ffc107; }
+        .suggestion { color: #28a745; font-weight: 600; margin-top: 8px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
+        .day-selector { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .day-btn { padding: 10px 20px; background: #e0e0e0; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; color: #333; font-weight: 600; }
+        .day-btn.active { background: #667eea; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+        <div class="card">
+            <h1>📊 Health Analytics - Last {{days}} Days</h1>
+            <div class="day-selector">
+                <a href="/analytics/7" class="day-btn {{'active' if days==7 else ''}}">7 Days</a>
+                <a href="/analytics/14" class="day-btn {{'active' if days==14 else ''}}">14 Days</a>
+                <a href="/analytics/30" class="day-btn {{'active' if days==30 else ''}}">30 Days</a>
+                <a href="/analytics/60" class="day-btn {{'active' if days==60 else ''}}">60 Days</a>
+                <a href="/analytics/90" class="day-btn {{'active' if days==90 else ''}}">90 Days</a>
+            </div>
+            {% if no_data %}
+            <p style="text-align: center; color: #999; padding: 40px;">No data available for this period. Start logging food to see analytics!</p>
+            {% else %}
+            <div class="stats-grid">
+                <div class="stat-box"><div class="stat-value">{{ avg_protein }}</div><div class="stat-label">Avg Protein (g/day)</div></div>
+                <div class="stat-box"><div class="stat-value">{{ avg_fiber }}</div><div class="stat-label">Avg Fiber (g/day)</div></div>
+                <div class="stat-box"><div class="stat-value">{{ avg_vitc }}</div><div class="stat-label">Avg Vitamin C (mg/day)</div></div>
+                <div class="stat-box"><div class="stat-value">{{ avg_iron }}</div><div class="stat-label">Avg Iron (mg/day)</div></div>
+                <div class="stat-box"><div class="stat-value">{{ avg_calc }}</div><div class="stat-label">Avg Calcium (mg/day)</div></div>
+            </div>
+            {% if deficiencies %}
+            <h2>⚠️ Nutrient Deficiencies Detected</h2>
+            {% for def in deficiencies %}
+            <div class="deficiency-item {{'critical' if def.avg < def.need * 0.5 else ''}}">
+                <strong>{{ def.name }}:</strong> You're averaging {{ def.avg }}{{ 'mg' if 'Vitamin' in def.name or 'Iron' in def.name or 'Calcium' in def.name else 'g' }} per day, but need {{ def.need }}{{ 'mg' if 'Vitamin' in def.name or 'Iron' in def.name or 'Calcium' in def.name else 'g' }}.
+                <div class="suggestion">💡 Eat more: {{ def.foods }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color: #28a745; font-weight: 600;">✅ No major nutrient deficiencies detected!</p>
+            {% endif %}
+            {% if risks %}
+            <h2 style="margin-top: 30px;">🏥 Health Risk Predictions</h2>
+            {% for risk in risks %}
+            <div class="risk-item {{risk.severity}}">
+                <strong>{{ risk.risk }}</strong> ({{ risk.severity}} risk)
+                <p style="margin-top: 8px; color: #666;">{{ risk.desc }}</p>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
