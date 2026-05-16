@@ -126,6 +126,8 @@ FOODS = {
     'kachori': {'cal': 280, 'pro': 6, 'carb': 35, 'fat': 13, 'tier': 'standard'},
     'dhokla': {'cal': 160, 'pro': 4, 'carb': 29, 'fat': 3, 'tier': 'standard'},
     'jalebi': {'cal': 450, 'pro': 2, 'carb': 65, 'fat': 20, 'tier': 'standard'},
+    'vada pav': {'cal': 260, 'pro': 5.5, 'carb': 32, 'fat': 11, 'tier': 'standard'},
+    
     
     # NIGERIAN FOODS (30 items)
     'jollof rice': {'cal': 150, 'pro': 3, 'carb': 30, 'fat': 2, 'tier': 'standard'},
